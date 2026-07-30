@@ -1,98 +1,179 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useEffect, useRef } from "react";
+import {
+  Animated,
+  Easing,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+import { Screen } from "@/components/screen";
+import { theme } from "@/styles/theme";
 
 export default function HomeScreen() {
+  const cardOpacity = useRef(new Animated.Value(0)).current;
+  const cardTranslateY = useRef(new Animated.Value(24)).current;
+  const iconAnimation = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(cardOpacity, {
+        toValue: 1,
+        duration: 500,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+
+      Animated.spring(cardTranslateY, {
+        toValue: 0,
+        damping: 12,
+        stiffness: 120,
+        mass: 0.8,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    const iconLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(iconAnimation, {
+          toValue: 1,
+          duration: 1000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+
+        Animated.timing(iconAnimation, {
+          toValue: 0,
+          duration: 1000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
+    iconLoop.start();
+
+    return () => {
+      iconLoop.stop();
+    };
+  }, [cardOpacity, cardTranslateY, iconAnimation]);
+
+  const iconTranslateY = iconAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -5],
+  });
+
+  const iconRotate = iconAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "4deg"],
+  });
+
+  const iconScale = iconAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.08],
+  });
+
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+    <Screen contentContainerStyle={styles.container}>
+      <Animated.View
+        style={[
+          styles.card,
+          {
+            opacity: cardOpacity,
+            transform: [
+              {
+                translateY: cardTranslateY,
+              },
+            ],
+          },
+        ]}
+      >
+        <Animated.View
+          style={[
+            styles.iconContainer,
+            {
+              transform: [
+                {
+                  translateY: iconTranslateY,
+                },
+                {
+                  rotate: iconRotate,
+                },
+                {
+                  scale: iconScale,
+                },
+              ],
+            },
+          ]}
+        >
+          <Text style={styles.icon}>🥬</Text>
+        </Animated.View>
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+        <View style={styles.content}>
+          <Text style={styles.title}>Hello World</Text>
+          <Text style={styles.subtitle}>
+            6 items in your fridge
+          </Text>
+        </View>
+      </Animated.View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
+    justifyContent: "center",
+    padding: theme.spacing.xl,
+    backgroundColor: theme.colors.background,
   },
-  safeArea: {
+
+  card: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.md,
+
+    padding: theme.spacing.lg,
+
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radii.lg,
+
+    ...theme.shadows.small,
+  },
+
+  iconContainer: {
+    width: 56,
+    height: 56,
+
+    alignItems: "center",
+    justifyContent: "center",
+
+    backgroundColor: theme.colors.backgroundMuted,
+    borderRadius: theme.radii.md,
+  },
+
+  icon: {
+    fontSize: 28,
+  },
+
+  content: {
     flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
   },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
+
   title: {
-    textAlign: 'center',
+    fontSize: theme.fontSizes.lg,
+    lineHeight: theme.lineHeights.lg,
+    fontWeight: theme.fontWeights.bold,
+    color: theme.colors.text,
   },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+
+  subtitle: {
+    marginTop: theme.spacing.xs,
+    fontSize: theme.fontSizes.sm,
+    lineHeight: theme.lineHeights.sm,
+    color: theme.colors.textMuted,
   },
 });

@@ -12,11 +12,11 @@ import {
 import {
     InventoryItemCard,
     type InventoryItem,
-} from "./_components/inventory/inventory-item-card";
+} from "../../components/inventory/inventory-item-card";
 
-import { Screen } from "@/components/screen";
+import { Screen } from "@/components/ui/screen";
 import { theme } from "@/styles/theme";
-import { PageHeader } from "./_components/screen-header";
+import { PageHeader } from "../../components/navigation/screen-header";
 
 type InventoryCategory =
     | "All"

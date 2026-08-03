@@ -8,12 +8,12 @@ import {
   View
 } from "react-native";
 
-import { Screen } from "@/components/screen";
+import { Screen } from "@/components/ui/screen";
 import { theme } from "@/styles/theme";
-import { HeroFeature } from "./_components/hero-feature";
-import { NotificationOption } from "./_components/notification-option";
-import { OptionGrid } from "./_components/option-grid";
-import { SetupCard } from "./_components/setup-card";
+import { HeroFeature } from "../../components/onboarding/hero-feature";
+import { NotificationOption } from "../../components/onboarding/notification-option";
+import { OptionGrid } from "../../components/onboarding/option-grid";
+import { SetupCard } from "../../components/onboarding/setup-card";
 
 type IconName = ComponentProps<typeof Ionicons>["name"];
 

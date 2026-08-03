@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { Screen } from "@/components/screen";
+import { Screen } from "@/components/ui/screen";
 import {
     colors,
     fontSizes,
@@ -12,7 +12,7 @@ import {
     shadows,
     spacing,
 } from "@/styles/theme";
-import { PageHeader } from "./_components/screen-header";
+import { PageHeader } from "../../components/navigation/screen-header";
 
 function getGreeting() {
     const hour = new Date().getHours();

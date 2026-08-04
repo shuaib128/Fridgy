@@ -1,19 +1,28 @@
-import { Ionicons } from "@expo/vector-icons";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet } from "react-native";
 
+import { AttentionCard } from "@/components/home/attention-card";
+import { DailyFridgeInsight, FridgeStatusCard } from "@/components/home/fridge-status-card";
+import KitchenOverviewCard from "@/components/home/kitchen-overview-card";
+import SavingsStreakCard from "@/components/home/savings-streak-card";
+import SmartGroceryCard from "@/components/home/smart-grocery-card";
+import { TonightRecommendation, TonightRecommendationCard } from "@/components/home/tonight-recommendation-card";
+import WeeklyInsightsCard from "@/components/home/weekly-usage-data";
 import { Screen } from "@/components/ui/screen";
+import ChefTipModal from "@/constants/chef-tip-modal";
+import { Spacer } from "@/constants/Spacer";
 import {
     colors,
     fontSizes,
     fontWeights,
-    iconSizes,
     lineHeights,
     radii,
     shadows,
-    spacing,
+    spacing
 } from "@/styles/theme";
+import { router } from "expo-router";
 import { PageHeader } from "../../components/navigation/screen-header";
 
+// Greeting function for the home screen
 function getGreeting() {
     const hour = new Date().getHours();
 
@@ -28,6 +37,121 @@ function getGreeting() {
     return "Good evening";
 }
 
+const dailyInsights: DailyFridgeInsight[] = [
+    {
+        icon: "restaurant-outline",
+        status: "Use soon",
+        headline: "Your chicken expires tomorrow.",
+        description:
+            "You already have everything needed for",
+        recipeName: "Creamy Garlic Chicken Pasta",
+        duration: "28 min",
+        matchPercentage: 98,
+        buttonLabel: "Start cooking",
+    },
+    {
+        icon: "leaf-outline",
+        status: "Fresh pick",
+        headline: "Your spinach is at its best today.",
+        description:
+            "Use it while it is fresh in a quick",
+        recipeName: "Spinach and Feta Omelet",
+        duration: "15 min",
+        matchPercentage: 94,
+        buttonLabel: "View recipe",
+    },
+    {
+        icon: "warning-outline",
+        status: "Running low",
+        headline: "You only have one egg left.",
+        description:
+            "Add eggs to your next shopping trip or make",
+        recipeName: "Avocado Breakfast Toast",
+        duration: "12 min",
+        matchPercentage: 91,
+        buttonLabel: "View meal",
+    },
+    {
+        icon: "snow-outline",
+        status: "Freezer find",
+        headline: "Your frozen salmon is ready to use.",
+        description:
+            "Pair it with your rice and vegetables for",
+        recipeName: "Honey Garlic Salmon Bowl",
+        duration: "32 min",
+        matchPercentage: 96,
+        buttonLabel: "Start cooking",
+    },
+    {
+        icon: "sparkles-outline",
+        status: "Perfect match",
+        headline: "You can make dinner without shopping.",
+        description:
+            "Your current ingredients are a great match for",
+        recipeName: "One-Pan Chicken Fried Rice",
+        duration: "25 min",
+        matchPercentage: 100,
+        buttonLabel: "Cook this meal",
+    },
+];
+
+const attentionItems = [
+    {
+        id: "avocados",
+        emoji: "🥑",
+        name: "Avocados",
+        message: "2 days left",
+    },
+    {
+        id: "chicken",
+        emoji: "🍗",
+        name: "Chicken",
+        message: "Expires tomorrow",
+    },
+    {
+        id: "spinach",
+        emoji: "🥬",
+        name: "Spinach",
+        message: "Running low",
+    },
+];
+
+const tonightRecommendation: TonightRecommendation = {
+    icon: "restaurant-outline",
+    recipeName: "Creamy Chicken Pasta",
+    matchPercentage: 98,
+    duration: "25 min",
+    ingredients: [
+        "Chicken",
+        "Milk",
+        "Garlic",
+    ],
+    buttonLabel: "Cook now",
+};
+
+const grocerySuggestions = [
+    {
+        id: "onion",
+        name: "Onion",
+        icon: "leaf-outline" as const,
+    },
+    {
+        id: "parmesan",
+        name: "Parmesan",
+        icon: "restaurant-outline" as const,
+    },
+];
+
+const weeklyProduceUsage = [
+    { id: "mon", day: "M", percentage: 62 },
+    { id: "tue", day: "T", percentage: 78 },
+    { id: "wed", day: "W", percentage: 70 },
+    { id: "thu", day: "T", percentage: 88 },
+    { id: "fri", day: "F", percentage: 82 },
+    { id: "sat", day: "S", percentage: 96 },
+    { id: "sun", day: "S", percentage: 92 },
+];
+
 export default function HomeScreen() {
     return (
         <Screen
@@ -36,107 +160,95 @@ export default function HomeScreen() {
             backgroundColor={colors.background}
             contentContainerStyle={styles.content}
         >
+            <ChefTipModal />
+            
             <PageHeader
                 eyebrow={getGreeting().toUpperCase()}
                 title="Hello, Shuaib 👋"
                 description="Let’s see what is happening in your fridge."
                 icon="person-outline"
                 accessibilityLabel="Open profile"
-                onPress={() => {
-                    console.log("Profile pressed");
+                onPress={() => router.push("/profile")}
+            />
+
+            <FridgeStatusCard
+                insights={dailyInsights}
+                autoRotateInterval={6500}
+                onStartCooking={(insight) => {
+                    console.log(insight.recipeName);
                 }}
             />
 
-            <View style={styles.fridgeCard}>
-                <View style={styles.cardTopRow}>
-                    <View style={styles.iconBadge}>
-                        <Ionicons
-                            name="leaf-outline"
-                            size={iconSizes.xl}
-                            color={colors.primaryDark}
-                        />
-                    </View>
+            <Spacer size={25} />
 
-                    <View style={styles.statusBadge}>
-                        <View style={styles.statusDot} />
+            <AttentionCard
+                items={attentionItems}
+                onItemPress={(item) => {
+                    console.log("Selected:", item.name);
+                }}
+                onViewAll={() => {
+                    router.push("/inventory");
+                }}
+            />
 
-                        <Text style={styles.statusText}>
-                            Looking good
-                        </Text>
-                    </View>
-                </View>
+            <Spacer size={25} />
 
-                <Text style={styles.cardTitle}>
-                    Your fridge is ready
-                </Text>
+            <TonightRecommendationCard
+                recommendation={tonightRecommendation}
+                onCookNow={(recipe) => {
+                    console.log(
+                        "Cooking:",
+                        recipe.recipeName,
+                    );
+                }}
+            />
 
-                <Text style={styles.cardDescription}>
-                    Add your first food item to start tracking freshness,
-                    quantity, and meal ideas.
-                </Text>
+            <Spacer size={50} />
 
-                <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Add food"
-                    style={({ pressed }) => [
-                        styles.addButton,
-                        pressed && styles.pressed,
-                    ]}
-                    onPress={() => {
-                        console.log("Add food pressed");
-                    }}
-                >
-                    <View style={styles.addButtonIcon}>
-                        <Ionicons
-                            name="add"
-                            size={iconSizes.sm}
-                            color={colors.primaryDark}
-                        />
-                    </View>
+            <KitchenOverviewCard
+                totalItems={24}
+                expiringSoon={3}
+                runningLow={2}
+                onPress={() => {
+                    router.push("/inventory");
+                }}
+            />
 
-                    <Text style={styles.addButtonText}>
-                        Add food
-                    </Text>
-                </Pressable>
-            </View>
+            <Spacer size={25} />
 
-            <View style={styles.quickRow}>
-                <View style={styles.quickCard}>
-                    <View style={styles.quickIcon}>
-                        <Ionicons
-                            name="cube-outline"
-                            size={iconSizes.md}
-                            color={colors.primaryDark}
-                        />
-                    </View>
+            <SmartGroceryCard
+                items={grocerySuggestions}
+                estimatedPrice={7.2}
+                storeName="Safeway"
+                onPress={() => {
+                    router.push("/profile");
+                }}
+            />
 
-                    <Text style={styles.quickValue}>
-                        0
-                    </Text>
+            <Spacer size={25} />
 
-                    <Text style={styles.quickLabel}>
-                        Food items
-                    </Text>
-                </View>
+            <SavingsStreakCard
+                foodsSaved={14}
+                estimatedSavings={43}
+                mealsCooked={6}
+                streakDays={4}
+                onPress={() => {
+                    console.log("Open progress details");
+                }}
+            />
 
-                <View style={styles.quickCard}>
-                    <View style={styles.quickIcon}>
-                        <Ionicons
-                            name="time-outline"
-                            size={iconSizes.md}
-                            color={colors.primaryDark}
-                        />
-                    </View>
+            <Spacer size={70} />
 
-                    <Text style={styles.quickValue}>
-                        0
-                    </Text>
-
-                    <Text style={styles.quickLabel}>
-                        Expiring soon
-                    </Text>
-                </View>
-            </View>
+            <WeeklyInsightsCard
+                produceUsagePercentage={92}
+                produceUsed={23}
+                produceWasted={2}
+                changeFromLastWeek={8}
+                weeklyData={weeklyProduceUsage}
+                onPress={() => {
+                    console.log("Open full weekly insights");
+                }}
+            />
         </Screen>
     );
 }
@@ -148,115 +260,6 @@ const styles = StyleSheet.create({
         paddingBottom:
             spacing["4xl"] +
             72,
-    },
-
-    fridgeCard: {
-        padding: spacing.xl,
-        borderRadius: radii["2xl"],
-        borderWidth: 1,
-        borderColor: colors.primaryDark,
-        backgroundColor: colors.primary,
-        ...shadows.large,
-    },
-
-    cardTopRow: {
-        flexDirection: "row",
-        alignItems: "flex-start",
-        justifyContent: "space-between",
-        gap: spacing.md,
-        marginBottom: spacing.xl,
-    },
-
-    iconBadge: {
-        width: 72,
-        height: 72,
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: colors.accent,
-        borderRadius: radii.xl,
-        borderWidth: 4,
-        borderColor: colors.primaryLight,
-        transform: [
-            {
-                rotate: "-4deg",
-            },
-        ],
-        ...shadows.small,
-    },
-
-    statusBadge: {
-        minHeight: 36,
-        flexDirection: "row",
-        alignItems: "center",
-        gap: spacing.sm,
-        paddingHorizontal: spacing.md,
-        borderRadius: radii.full,
-        borderWidth: 1,
-        borderColor: colors.primaryLight,
-        backgroundColor: colors.primaryDark,
-    },
-
-    statusDot: {
-        width: 8,
-        height: 8,
-        borderRadius: radii.full,
-        backgroundColor: colors.accent,
-    },
-
-    statusText: {
-        color: colors.textInverse,
-        fontSize: fontSizes.xs,
-        lineHeight: lineHeights.xs,
-        fontWeight: fontWeights.bold,
-    },
-
-    cardTitle: {
-        maxWidth: 280,
-        color: colors.textInverse,
-        fontSize: fontSizes["2xl"],
-        lineHeight: lineHeights["2xl"],
-        fontWeight: fontWeights.extraBold,
-    },
-
-    cardDescription: {
-        maxWidth: 320,
-        marginTop: spacing.sm,
-        color: colors.backgroundMuted,
-        fontSize: fontSizes.sm,
-        lineHeight: lineHeights.sm,
-        fontWeight: fontWeights.regular,
-    },
-
-    addButton: {
-        alignSelf: "flex-start",
-        minHeight: 46,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: spacing.sm,
-        marginTop: spacing.lg,
-        paddingHorizontal: spacing.lg,
-        borderRadius: radii.full,
-        borderWidth: 1,
-        borderColor: colors.accentLight,
-        backgroundColor: colors.accent,
-        ...shadows.small,
-    },
-
-    addButtonIcon: {
-        width: 30,
-        height: 30,
-        alignItems: "center",
-        justifyContent: "center",
-        borderRadius: radii.full,
-        backgroundColor: colors.accentLight,
-    },
-
-    addButtonText: {
-        color: colors.primaryDark,
-        fontSize: fontSizes.sm,
-        lineHeight: lineHeights.sm,
-        fontWeight: fontWeights.bold,
     },
 
     quickRow: {
@@ -301,14 +304,5 @@ const styles = StyleSheet.create({
         fontSize: fontSizes.sm,
         lineHeight: lineHeights.sm,
         fontWeight: fontWeights.medium,
-    },
-
-    pressed: {
-        opacity: 0.8,
-        transform: [
-            {
-                scale: 0.98,
-            },
-        ],
     },
 });

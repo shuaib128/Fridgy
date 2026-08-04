@@ -491,7 +491,6 @@ const styles = StyleSheet.create({
         minHeight: theme.componentSizes.inputHeight,
         color: theme.colors.text,
         fontSize: theme.fontSizes.md,
-        lineHeight: theme.lineHeights.md,
     },
 
     clearButton: {

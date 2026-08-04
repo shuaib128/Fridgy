@@ -30,7 +30,10 @@ import {
     shadows,
     spacing,
 } from "@/styles/theme";
-import { QuickFoodSearch } from "@/components/add-inventory/quick-food-search";
+import {
+    QuickFoodSearch,
+    FoodSearchItem
+} from "@/components/add-inventory/quick-food-search";
 
 type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
 

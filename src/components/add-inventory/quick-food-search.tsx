@@ -1,5 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import {
+    forwardRef,
+    useMemo,
+    useState,
+} from "react";
+import {
     Pressable,
     StyleSheet,
     Text,
@@ -9,11 +14,6 @@ import {
 import Animated, {
     FadeInDown,
 } from "react-native-reanimated";
-import {
-    forwardRef,
-    useMemo,
-    useState,
-} from "react";
 
 import {
     colors,

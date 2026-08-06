@@ -16,7 +16,14 @@ import Animated, {
 import { PageHeader } from "@/components/navigation/screen-header";
 
 import { ActionCard } from "@/components/add-inventory/action-card";
-import { AddManuallyModal } from "@/components/add-inventory/add-manually-modal";
+import {
+    AddManuallyModal,
+    ManualKitchenItem
+} from "@/components/add-inventory/add-manually-modal";
+
+import api, { ApiError } from "@/hooks/api";
+
+
 import {
     QuickFoodSearch
 } from "@/components/add-inventory/quick-food-search";
@@ -171,6 +178,43 @@ export default function AddInventoryScreen() {
         } as Href);
     };
 
+    // Add item in the backend send request
+    const handleAddKitchenItem = async (
+        item: ManualKitchenItem,
+    ): Promise<void> => {
+        try {
+            const createdItem = await api.post(
+                "/inventory",
+                {
+                    name: item.name,
+                    emoji: item.emoji,
+                    quantity: item.quantity,
+                    unit: item.unit,
+                    category: item.category,
+                    storage: item.storage,
+                    expiration: item.expiration,
+                    expirationDate:
+                        item.expirationDate?.toISOString() ?? null,
+                    notes: item.notes || null,
+                },
+            );
+
+            console.log("Kitchen item created:", createdItem);
+        } catch (error) {
+            if (error instanceof ApiError) {
+                console.error("Failed to create item:", {
+                    status: error.status,
+                    message: error.message,
+                    data: error.data,
+                });
+            } else {
+                console.error("Unexpected error:", error);
+            }
+
+            throw error;
+        }
+    };
+
     return (
 
         <Screen
@@ -258,9 +302,7 @@ export default function AddInventoryScreen() {
                 onClose={() => {
                     setManualModalVisible(false);
                 }}
-                onAdd={async (item) => {
-                    console.log("Adding item:", item);
-                }}
+                onAdd={handleAddKitchenItem}
             />
         </Screen>
     );

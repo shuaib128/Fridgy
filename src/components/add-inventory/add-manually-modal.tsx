@@ -81,7 +81,7 @@ export type ManualKitchenItem = {
     notes: string;
 };
 
-type AddManuallyModalProps = {
+export type AddManuallyModalProps = {
     visible: boolean;
     onClose: () => void;
     onAdd?: (item: ManualKitchenItem) => void | Promise<void>;

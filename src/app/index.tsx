@@ -1,11 +1,11 @@
 import { Redirect } from "expo-router";
 
-const hasCompletedOnboarding = true;
+const hasCompletedOnboarding = false;
 
 export default function IndexScreen() {
   if (hasCompletedOnboarding) {
     return <Redirect href="/(tabs)" />;
   }
 
-  return <Redirect href="/onboarding" />;
+  return <Redirect href="/login" />;
 }

@@ -18,7 +18,8 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.shuaib.fridgy"
     },
     "web": {
       "output": "static",
@@ -34,7 +35,13 @@
           "imageWidth": 76
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.369090721207-bifnbmltjtnca0fe1dv4ft986k0q4mag"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

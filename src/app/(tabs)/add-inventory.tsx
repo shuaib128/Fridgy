@@ -198,8 +198,6 @@ export default function AddInventoryScreen() {
                     notes: item.notes || null,
                 },
             );
-
-            console.log("Kitchen item created:", createdItem);
         } catch (error) {
             if (error instanceof ApiError) {
                 console.error("Failed to create item:", {

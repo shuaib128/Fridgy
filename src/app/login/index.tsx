@@ -3,17 +3,15 @@ import { useState } from "react";
 import {
     ActivityIndicator,
     Alert,
-    Image,
     Pressable,
     SafeAreaView,
     StyleSheet,
     Text,
-    View,
+    View
 } from "react-native";
 
 import {
-    signInWithGoogle,
-    signOutFromGoogle,
+    signInWithGoogle
 } from "@/auth/google-auth";
 import {
     colors,
@@ -70,75 +68,8 @@ export default function LoginScreen() {
         }
     };
 
-    const handleSignOut = async (): Promise<void> => {
-        try {
-            setLoading(true);
-            await signOutFromGoogle();
-            setUser(null);
-        } catch (error) {
-            Alert.alert(
-                "Sign-out failed",
-                error instanceof Error ? error.message : "Please try again.",
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    if (user) {
-        return (
-            <SafeAreaView style={styles.safeArea}>
-                <View style={styles.container}>
-                    <View style={styles.profileCard}>
-                        <View style={styles.successBadge}>
-                            <Ionicons
-                                name="checkmark"
-                                color={colors.textInverse}
-                                size={iconSizes.sm}
-                            />
-                        </View>
-
-                        {user.picture ? (
-                            <Image
-                                source={{ uri: user.picture }}
-                                style={styles.profileImage}
-                            />
-                        ) : (
-                            <View style={styles.profilePlaceholder}>
-                                <Ionicons
-                                    name="person"
-                                    color={colors.primary}
-                                    size={iconSizes.xl}
-                                />
-                            </View>
-                        )}
-
-                        <Text style={styles.welcomeText}>You’re all set! 🎉</Text>
-                        <Text style={styles.userName}>
-                            {user.name ?? "Google user"}
-                        </Text>
-                        <Text style={styles.userEmail}>{user.email}</Text>
-
-                        <Pressable
-                            disabled={loading}
-                            onPress={handleSignOut}
-                            style={({ pressed }) => [
-                                styles.signOutButton,
-                                pressed && styles.buttonPressed,
-                                loading && styles.buttonDisabled,
-                            ]}
-                        >
-                            {loading ? (
-                                <ActivityIndicator color={colors.textInverse} />
-                            ) : (
-                                <Text style={styles.signOutButtonText}>Sign out</Text>
-                            )}
-                        </Pressable>
-                    </View>
-                </View>
-            </SafeAreaView>
-        );
-    }
+    // Logout handler
+    const handleSignOut = async (): Promise<void> => { };
 
     return (
         <SafeAreaView style={styles.safeArea}>

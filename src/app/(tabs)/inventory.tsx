@@ -127,7 +127,6 @@ export default function InventoryScreen() {
     const handleInventoryItemPress = (
         item: InventoryItem,
     ) => {
-        console.log("Opened:", item.name);
     };
 
     return (
@@ -155,7 +154,6 @@ export default function InventoryScreen() {
                             icon="scan-outline"
                             accessibilityLabel="Scan inventory item"
                             onPress={() => {
-                                console.log("Scan pressed");
                             }}
                         />
 

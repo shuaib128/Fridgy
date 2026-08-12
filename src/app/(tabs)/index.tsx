@@ -175,7 +175,7 @@ export default function HomeScreen() {
                 insights={dailyInsights}
                 autoRotateInterval={6500}
                 onStartCooking={(insight) => {
-                    console.log(insight.recipeName);
+
                 }}
             />
 
@@ -184,7 +184,7 @@ export default function HomeScreen() {
             <AttentionCard
                 items={attentionItems}
                 onItemPress={(item) => {
-                    console.log("Selected:", item.name);
+
                 }}
                 onViewAll={() => {
                     router.push("/inventory");
@@ -196,10 +196,7 @@ export default function HomeScreen() {
             <TonightRecommendationCard
                 recommendation={tonightRecommendation}
                 onCookNow={(recipe) => {
-                    console.log(
-                        "Cooking:",
-                        recipe.recipeName,
-                    );
+
                 }}
             />
 
@@ -233,7 +230,6 @@ export default function HomeScreen() {
                 mealsCooked={6}
                 streakDays={4}
                 onPress={() => {
-                    console.log("Open progress details");
                 }}
             />
 
@@ -246,7 +242,6 @@ export default function HomeScreen() {
                 changeFromLastWeek={8}
                 weeklyData={weeklyProduceUsage}
                 onPress={() => {
-                    console.log("Open full weekly insights");
                 }}
             />
         </Screen>

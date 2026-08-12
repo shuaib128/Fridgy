@@ -175,10 +175,7 @@ export default function MealsScreen() {
             isSaved={savedMealIds.includes(item.id)}
             onSave={toggleSavedMeal}
             onPress={(selectedMeal) => {
-                console.log(
-                    "Opened meal:",
-                    selectedMeal.name,
-                );
+
             }}
         />
     );
@@ -210,7 +207,6 @@ export default function MealsScreen() {
                             accessibilityLabel="Open saved meals"
                             badgeCount={savedMealIds.length}
                             onPress={() => {
-                                console.log("Saved meals pressed");
                             }}
                         />
 

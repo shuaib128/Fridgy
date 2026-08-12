@@ -178,7 +178,6 @@ export default function ProfileScreen() {
                 icon="settings-outline"
                 accessibilityLabel="Open profile settings"
                 onPress={() => {
-                    console.log("Settings pressed");
                 }}
             />
 

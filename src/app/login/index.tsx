@@ -4,11 +4,14 @@ import {
     ActivityIndicator,
     Alert,
     Pressable,
-    SafeAreaView,
     StyleSheet,
     Text,
     View
 } from "react-native";
+
+import { Screen } from "@/components/ui/screen";
+import { useUserStore } from "@/stores/auth-store";
+import { useRouter } from "expo-router";
 
 import {
     signInWithGoogle
@@ -25,7 +28,6 @@ import {
     shadows,
     spacing,
 } from "@/styles/theme";
-import { VerifiedGoogleUser } from "@/types/auth";
 
 const googleColors = {
     blue: "#4285F4",
@@ -46,22 +48,83 @@ function GoogleColorDots() {
 }
 
 export default function LoginScreen() {
-    const [user, setUser] = useState<VerifiedGoogleUser | null>(null);
+    const router = useRouter();
+
+    const setUser = useUserStore((state) => state.setUser);
     const [loading, setLoading] = useState(false);
 
+    const getSignInErrorMessage = (error: unknown): string => {
+        if (!(error instanceof Error)) {
+            return "Something went wrong. Please try again.";
+        }
+
+        const message = error.message.toLowerCase();
+
+        if (
+            message.includes("cancel") ||
+            message.includes("sign_in_cancelled")
+        ) {
+            return "";
+        }
+
+        if (
+            message.includes("network request failed") ||
+            message.includes("failed to fetch") ||
+            message.includes("network error")
+        ) {
+            return "Unable to reach Fridgy. Check your internet connection and make sure the server is running.";
+        }
+
+        if (
+            message.includes("timeout") ||
+            message.includes("aborted")
+        ) {
+            return "The server took too long to respond. Please try again.";
+        }
+
+        return "We couldn't sign you in right now. Please try again shortly.";
+    };
+
     const handleGoogleSignIn = async (): Promise<void> => {
+        if (loading) return;
+
+        setLoading(true);
+
         try {
-            setLoading(true);
             const verifiedUser = await signInWithGoogle();
 
-            if (verifiedUser) {
-                setUser(verifiedUser);
-                console.log("Backend-verified Google user:", verifiedUser);
+            // The user may have closed Google's sign-in window.
+            if (!verifiedUser) {
+                return;
             }
+
+            setUser(verifiedUser);
+            router.replace("/(tabs)");
         } catch (error) {
+            console.error("Google sign-in failed:", error);
+
+            const message = getSignInErrorMessage(error);
+
+            // Don't show an error when the user intentionally cancelled.
+            if (!message) {
+                return;
+            }
+
             Alert.alert(
-                "Sign-in failed",
-                error instanceof Error ? error.message : "Please try again.",
+                "Unable to sign in",
+                message,
+                [
+                    {
+                        text: "Cancel",
+                        style: "cancel",
+                    },
+                    {
+                        text: "Try Again",
+                        onPress: () => {
+                            void handleGoogleSignIn();
+                        },
+                    },
+                ],
             );
         } finally {
             setLoading(false);
@@ -72,89 +135,99 @@ export default function LoginScreen() {
     const handleSignOut = async (): Promise<void> => { };
 
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <View style={styles.container}>
-                <View style={styles.hero}>
-                    <View style={styles.accentBubbleLeft} />
-                    <View style={styles.accentBubbleRight} />
+        <Screen
+            padded={false}
+            avoidKeyboard={false}
+            backgroundColor={colors.background}
+            contentContainerStyle={styles.container}
+        >
+            <View style={styles.hero}>
+                <View style={styles.accentBubbleLeft} />
+                <View style={styles.accentBubbleRight} />
 
-                    <View style={styles.logoWrap}>
-                        <View style={styles.logo}>
+                <View style={styles.logoWrap}>
+                    <View style={styles.logo}>
+                        <Ionicons
+                            name="leaf"
+                            color={colors.textInverse}
+                            size={iconSizes["2xl"]}
+                        />
+                    </View>
+
+                    <View style={styles.sparkleBadge}>
+                        <Ionicons
+                            name="sparkles"
+                            color={colors.text}
+                            size={iconSizes.sm}
+                        />
+                    </View>
+                </View>
+
+                <Text style={styles.eyebrow}>YOUR SMART KITCHEN</Text>
+                <Text style={styles.title}>Welcome to Fridgy</Text>
+
+                <Text style={styles.subtitle}>
+                    Less food waste, more delicious meals. Let’s make your kitchen
+                    smarter. 🌱
+                </Text>
+            </View>
+
+            <View style={styles.authCard}>
+                <GoogleColorDots />
+
+                <Text style={styles.cardTitle}>Ready to get cooking?</Text>
+
+                <Text style={styles.cardDescription}>
+                    Sign in to save your kitchen and meal ideas.
+                </Text>
+
+                <Pressable
+                    disabled={loading}
+                    onPress={handleGoogleSignIn}
+                    style={({ pressed }) => [
+                        styles.googleButton,
+                        pressed && styles.googleButtonPressed,
+                        loading && styles.buttonDisabled,
+                    ]}
+                >
+                    {loading ? (
+                        <ActivityIndicator color={colors.white} />
+                    ) : (
+                        <>
+                            <View style={styles.googleIconWrap}>
+                                <Ionicons
+                                    name="logo-google"
+                                    color={googleColors.blue}
+                                    size={iconSizes.md}
+                                />
+                            </View>
+
+                            <Text style={styles.googleButtonText}>
+                                Continue with Google
+                            </Text>
+
                             <Ionicons
-                                name="leaf"
-                                color={colors.textInverse}
-                                size={iconSizes["2xl"]}
-                            />
-                        </View>
-                        <View style={styles.sparkleBadge}>
-                            <Ionicons
-                                name="sparkles"
-                                color={colors.text}
+                                name="arrow-forward"
+                                color={colors.white}
                                 size={iconSizes.sm}
                             />
-                        </View>
-                    </View>
+                        </>
+                    )}
+                </Pressable>
 
-                    <Text style={styles.eyebrow}>YOUR SMART KITCHEN</Text>
-                    <Text style={styles.title}>Welcome to Fridgy</Text>
-                    <Text style={styles.subtitle}>
-                        Less food waste, more delicious meals. Let’s make your
-                        kitchen smarter. 🌱
+                <View style={styles.privacyRow}>
+                    <Ionicons
+                        name="shield-checkmark"
+                        color={colors.primary}
+                        size={iconSizes.xs}
+                    />
+
+                    <Text style={styles.privacyText}>
+                        Secure sign-in — your password stays with Google
                     </Text>
-                </View>
-
-                <View style={styles.authCard}>
-                    <GoogleColorDots />
-                    <Text style={styles.cardTitle}>Ready to get cooking?</Text>
-                    <Text style={styles.cardDescription}>
-                        Sign in to save your kitchen and meal ideas.
-                    </Text>
-
-                    <Pressable
-                        disabled={loading}
-                        onPress={handleGoogleSignIn}
-                        style={({ pressed }) => [
-                            styles.googleButton,
-                            pressed && styles.googleButtonPressed,
-                            loading && styles.buttonDisabled,
-                        ]}
-                    >
-                        {loading ? (
-                            <ActivityIndicator color={colors.white} />
-                        ) : (
-                            <>
-                                <View style={styles.googleIconWrap}>
-                                    <Ionicons
-                                        name="logo-google"
-                                        color={googleColors.blue}
-                                        size={iconSizes.md}
-                                    />
-                                </View>
-                                <Text style={styles.googleButtonText}>
-                                    Continue with Google
-                                </Text>
-                                <Ionicons
-                                    name="arrow-forward"
-                                    color={colors.white}
-                                    size={iconSizes.sm}
-                                />
-                            </>
-                        )}
-                    </Pressable>
-
-                    <View style={styles.privacyRow}>
-                        <Ionicons
-                            name="shield-checkmark"
-                            color={colors.primary}
-                            size={iconSizes.xs}
-                        />
-                        <Text style={styles.privacyText}>
-                            Secure sign-in — your password stays with Google
-                        </Text>
-                    </View>
                 </View>
             </View>
-        </SafeAreaView>
+        </Screen>
     );
 }
 

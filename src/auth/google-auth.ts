@@ -3,6 +3,10 @@ import {
     isSuccessResponse,
 } from "@react-native-google-signin/google-signin";
 
+import {
+    clearAuthTokens,
+    saveAuthTokens,
+} from "@/auth/token-storage";
 import api from "@/hooks/api";
 import {
     GoogleAuthResponse,
@@ -55,10 +59,6 @@ export async function signInWithGoogle():
         return null;
     }
 
-    /*
-     * Send the signed ID token to your backend.
-     * Never send result.data.user.id as proof of identity.
-     */
     const idToken = result.data.idToken;
 
     if (!idToken) {
@@ -68,12 +68,26 @@ export async function signInWithGoogle():
     const response = await api.post<GoogleAuthResponse>(
         "/auth/google",
         { idToken },
+        { requiresAuth: false },
     );
 
-    return response.user;
+    const {
+        accessToken,
+        refreshToken,
+        user,
+    } = response;
+
+    await saveAuthTokens({
+        accessToken,
+        refreshToken,
+    });
+
+    return user;
 }
 
 export async function signOutFromGoogle(): Promise<void> {
     configureGoogleSignIn();
+
+    await clearAuthTokens();
     await GoogleSignin.signOut();
 }

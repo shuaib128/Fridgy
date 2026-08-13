@@ -9,5 +9,7 @@ export type VerifiedGoogleUser = {
 };
 
 export type GoogleAuthResponse = {
+    accessToken: string;
+    refreshToken: string;
     user: VerifiedGoogleUser;
 };

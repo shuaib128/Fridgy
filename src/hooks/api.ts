@@ -1,12 +1,20 @@
 /**
  * Central API client for Fridgy.
  *
- * Uses the native JavaScript fetch API only.
+ * Uses the native JavaScript fetch API.
  *
- * Example:
+ * Authenticated request:
  *   const items = await api.get<InventoryItem[]>("/inventory");
- *   const created = await api.post<InventoryItem>("/inventory", payload);
+ *
+ * Public request:
+ *   const response = await api.post<AuthResponse>(
+ *       "/auth/google",
+ *       payload,
+ *       { requiresAuth: false },
+ *   );
  */
+
+import { getAccessToken } from "@/auth/token-storage";
 
 const API_BASE_URL =
     process.env.EXPO_PUBLIC_API_URL?.replace(/\/+$/, "") ??
@@ -14,7 +22,12 @@ const API_BASE_URL =
 
 const DEFAULT_TIMEOUT_MS = 15_000;
 
-type QueryValue = string | number | boolean | null | undefined;
+type QueryValue =
+    | string
+    | number
+    | boolean
+    | null
+    | undefined;
 
 export type QueryParams = Record<
     string,
@@ -34,6 +47,15 @@ export type ApiRequestOptions = {
     body?: RequestBody;
     timeoutMs?: number;
     signal?: AbortSignal;
+
+    /**
+     * Defaults to true.
+     *
+     * Set to false for public endpoints such as:
+     * - /auth/google
+     * - /auth/refresh
+     * - /health
+     */
     requiresAuth?: boolean;
 };
 
@@ -69,30 +91,17 @@ export class ApiError<T = ApiErrorResponse> extends Error {
     }
 }
 
-type TokenGetter = () =>
-    | string
-    | null
-    | undefined
-    | Promise<string | null | undefined>;
+function buildUrl(
+    path: string,
+    query?: QueryParams,
+): string {
+    const normalizedPath = path.startsWith("/")
+        ? path
+        : `/${path}`;
 
-let getAccessToken: TokenGetter = () => null;
-
-/**
- * Connect your auth storage once near the app root.
- *
- * Example with SecureStore:
- *
- * configureApiAuth(async () => {
- *     return SecureStore.getItemAsync("accessToken");
- * });
- */
-export function configureApiAuth(tokenGetter: TokenGetter): void {
-    getAccessToken = tokenGetter;
-}
-
-function buildUrl(path: string, query?: QueryParams): string {
-    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-    const url = new URL(`${API_BASE_URL}${normalizedPath}`);
+    const url = new URL(
+        `${API_BASE_URL}${normalizedPath}`,
+    );
 
     if (!query) {
         return url.toString();
@@ -101,57 +110,88 @@ function buildUrl(path: string, query?: QueryParams): string {
     Object.entries(query).forEach(([key, value]) => {
         if (Array.isArray(value)) {
             value.forEach((item) => {
-                if (item !== null && item !== undefined) {
-                    url.searchParams.append(key, String(item));
+                if (
+                    item !== null &&
+                    item !== undefined
+                ) {
+                    url.searchParams.append(
+                        key,
+                        String(item),
+                    );
                 }
             });
 
             return;
         }
 
-        if (value !== null && value !== undefined) {
-            url.searchParams.set(key, String(value));
+        if (
+            value !== null &&
+            value !== undefined
+        ) {
+            url.searchParams.set(
+                key,
+                String(value),
+            );
         }
     });
 
     return url.toString();
 }
 
-function isFormData(body: RequestBody | undefined): body is FormData {
-    return typeof FormData !== "undefined" && body instanceof FormData;
+function isFormData(
+    body: RequestBody | undefined,
+): body is FormData {
+    return (
+        typeof FormData !== "undefined" &&
+        body instanceof FormData
+    );
 }
 
 function createRequestBody(
     body: RequestBody | undefined,
     headers: Headers,
 ): BodyInit | undefined {
-    if (body === undefined || body === null) {
+    if (
+        body === undefined ||
+        body === null
+    ) {
         return undefined;
     }
 
     if (isFormData(body)) {
-        // Do not manually set Content-Type for FormData.
-        // fetch adds the required multipart boundary.
+        /*
+         * Do not manually set Content-Type for FormData.
+         * fetch adds the multipart boundary automatically.
+         */
         headers.delete("Content-Type");
+
         return body;
     }
 
     if (typeof body === "string") {
         if (!headers.has("Content-Type")) {
-            headers.set("Content-Type", "text/plain");
+            headers.set(
+                "Content-Type",
+                "text/plain",
+            );
         }
 
         return body;
     }
 
     if (!headers.has("Content-Type")) {
-        headers.set("Content-Type", "application/json");
+        headers.set(
+            "Content-Type",
+            "application/json",
+        );
     }
 
     return JSON.stringify(body);
 }
 
-async function parseResponseBody(response: Response): Promise<unknown> {
+async function parseResponseBody(
+    response: Response,
+): Promise<unknown> {
     if (
         response.status === 204 ||
         response.status === 205
@@ -159,13 +199,17 @@ async function parseResponseBody(response: Response): Promise<unknown> {
         return null;
     }
 
-    const contentType = response.headers.get("content-type") ?? "";
+    const contentType =
+        response.headers.get("content-type") ?? "";
 
-    if (contentType.includes("application/json")) {
+    if (
+        contentType.includes("application/json")
+    ) {
         return response.json();
     }
 
     const text = await response.text();
+
     return text.length > 0 ? text : null;
 }
 
@@ -177,7 +221,8 @@ function getErrorMessage(
         typeof data === "object" &&
         data !== null
     ) {
-        const response = data as ApiErrorResponse;
+        const response =
+            data as ApiErrorResponse;
 
         if (
             typeof response.message === "string" &&
@@ -194,7 +239,10 @@ function getErrorMessage(
         }
     }
 
-    if (typeof data === "string" && data.trim()) {
+    if (
+        typeof data === "string" &&
+        data.trim()
+    ) {
         return data;
     }
 
@@ -210,6 +258,7 @@ function combineSignals(
     didTimeout: () => boolean;
 } {
     const controller = new AbortController();
+
     let timedOut = false;
 
     const timeoutId = setTimeout(() => {
@@ -217,7 +266,9 @@ function combineSignals(
         controller.abort();
     }, timeoutMs);
 
-    const abortFromExternalSignal = () => controller.abort();
+    const abortFromExternalSignal = () => {
+        controller.abort();
+    };
 
     if (externalSignal) {
         if (externalSignal.aborted) {
@@ -233,6 +284,7 @@ function combineSignals(
 
     return {
         signal: controller.signal,
+
         cleanup: () => {
             clearTimeout(timeoutId);
 
@@ -241,8 +293,29 @@ function combineSignals(
                 abortFromExternalSignal,
             );
         },
+
         didTimeout: () => timedOut,
     };
+}
+
+async function addAuthorizationHeader(
+    headers: Headers,
+    requiresAuth: boolean,
+): Promise<void> {
+    if (!requiresAuth) {
+        return;
+    }
+
+    const accessToken = await getAccessToken();
+
+    if (!accessToken) {
+        return;
+    }
+
+    headers.set(
+        "Authorization",
+        `Bearer ${accessToken}`,
+    );
 }
 
 async function request<T>(
@@ -262,18 +335,26 @@ async function request<T>(
     const url = buildUrl(path, query);
     const headers = new Headers(customHeaders);
 
-    headers.set("Accept", "application/json");
+    headers.set(
+        "Accept",
+        "application/json",
+    );
 
-    if (requiresAuth) {
-        const token = await getAccessToken();
+    await addAuthorizationHeader(
+        headers,
+        requiresAuth,
+    );
 
-        if (token) {
-            headers.set("Authorization", `Bearer ${token}`);
-        }
-    }
+    const requestBody = createRequestBody(
+        body,
+        headers,
+    );
 
-    const requestBody = createRequestBody(body, headers);
-    const { signal, cleanup, didTimeout } = combineSignals(
+    const {
+        signal,
+        cleanup,
+        didTimeout,
+    } = combineSignals(
         externalSignal,
         timeoutMs,
     );
@@ -286,7 +367,8 @@ async function request<T>(
             signal,
         });
 
-        const data = await parseResponseBody(response);
+        const data =
+            await parseResponseBody(response);
 
         if (!response.ok) {
             throw new ApiError({
@@ -295,7 +377,8 @@ async function request<T>(
                     `Request failed with status ${response.status}.`,
                 ),
                 status: response.status,
-                data: data as ApiErrorResponse | null,
+                data:
+                    data as ApiErrorResponse | null,
                 url,
             });
         }
@@ -306,10 +389,14 @@ async function request<T>(
             throw error;
         }
 
-        if (error instanceof Error && error.name === "AbortError") {
+        if (
+            error instanceof Error &&
+            error.name === "AbortError"
+        ) {
             if (didTimeout()) {
                 throw new ApiError({
-                    message: `Request timed out after ${timeoutMs}ms.`,
+                    message:
+                        `Request timed out after ${timeoutMs}ms.`,
                     status: 408,
                     data: null,
                     url,
@@ -341,49 +428,84 @@ async function request<T>(
 export const api = {
     get<T>(
         path: string,
-        options: Omit<ApiRequestOptions, "body"> = {},
+        options: Omit<
+            ApiRequestOptions,
+            "body"
+        > = {},
     ): Promise<T> {
-        return request<T>("GET", path, options);
+        return request<T>(
+            "GET",
+            path,
+            options,
+        );
     },
 
     post<T>(
         path: string,
         body?: RequestBody,
-        options: Omit<ApiRequestOptions, "body"> = {},
+        options: Omit<
+            ApiRequestOptions,
+            "body"
+        > = {},
     ): Promise<T> {
-        return request<T>("POST", path, {
-            ...options,
-            body,
-        });
+        return request<T>(
+            "POST",
+            path,
+            {
+                ...options,
+                body,
+            },
+        );
     },
 
     put<T>(
         path: string,
         body?: RequestBody,
-        options: Omit<ApiRequestOptions, "body"> = {},
+        options: Omit<
+            ApiRequestOptions,
+            "body"
+        > = {},
     ): Promise<T> {
-        return request<T>("PUT", path, {
-            ...options,
-            body,
-        });
+        return request<T>(
+            "PUT",
+            path,
+            {
+                ...options,
+                body,
+            },
+        );
     },
 
     patch<T>(
         path: string,
         body?: RequestBody,
-        options: Omit<ApiRequestOptions, "body"> = {},
+        options: Omit<
+            ApiRequestOptions,
+            "body"
+        > = {},
     ): Promise<T> {
-        return request<T>("PATCH", path, {
-            ...options,
-            body,
-        });
+        return request<T>(
+            "PATCH",
+            path,
+            {
+                ...options,
+                body,
+            },
+        );
     },
 
     delete<T = void>(
         path: string,
-        options: ApiRequestOptions = {},
+        options: Omit<
+            ApiRequestOptions,
+            "body"
+        > = {},
     ): Promise<T> {
-        return request<T>("DELETE", path, options);
+        return request<T>(
+            "DELETE",
+            path,
+            options,
+        );
     },
 
     request,

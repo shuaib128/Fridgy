@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import {
+    Alert,
     Pressable,
     StyleSheet,
     Switch,
@@ -8,8 +9,10 @@ import {
     View,
 } from "react-native";
 
+import { logout } from "@/auth/logout";
 import { Screen } from "@/components/ui/screen";
 import { theme } from "@/styles/theme";
+import { router } from "expo-router";
 import { PageHeader } from "../../components/navigation/screen-header";
 
 type MenuItem = {
@@ -110,6 +113,7 @@ export default function ProfileScreen() {
         const usesInverseIcon =
             item.iconBackground === "primary";
 
+
         return (
             <Pressable
                 key={item.id}
@@ -161,6 +165,38 @@ export default function ProfileScreen() {
             </Pressable>
         );
     };
+
+    // Handle logout
+    async function handleLogout() {
+        try {
+            await logout();
+            router.replace("/login");
+        } catch (error) {
+            console.error("Logout failed:", error);
+
+            Alert.alert(
+                "Logout failed",
+                "We couldn't log you out. Please try again.",
+            );
+        }
+    }
+    function confirmLogout() {
+        Alert.alert(
+            "Log out?",
+            "You will need to sign in again to access your account.",
+            [
+                {
+                    text: "Cancel",
+                    style: "cancel",
+                },
+                {
+                    text: "Log Out",
+                    style: "destructive",
+                    onPress: handleLogout,
+                },
+            ],
+        );
+    }
 
     return (
         <Screen
@@ -625,6 +661,7 @@ export default function ProfileScreen() {
                     styles.signOutButton,
                     pressed && styles.pressed,
                 ]}
+                onPress={confirmLogout}
             >
                 <Ionicons
                     name="log-out-outline"

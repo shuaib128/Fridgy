@@ -14,7 +14,12 @@
  *   );
  */
 
-import { getAccessToken } from "@/auth/token-storage";
+import {
+    clearAuthTokens,
+    getAccessToken,
+    getRefreshToken,
+    saveAuthTokens,
+} from "@/auth/token-storage";
 
 const API_BASE_URL =
     process.env.EXPO_PUBLIC_API_URL?.replace(/\/+$/, "") ??
@@ -65,6 +70,17 @@ export type ApiErrorResponse = {
     errors?: unknown;
     [key: string]: unknown;
 };
+
+type RefreshTokenResponse = {
+    accessToken: string;
+    refreshToken: string;
+};
+
+/*
+ * When several authenticated requests fail together, they should all wait for
+ * the same refresh request instead of rotating the refresh token repeatedly.
+ */
+let refreshPromise: Promise<string | null> | null = null;
 
 export class ApiError<T = ApiErrorResponse> extends Error {
     readonly status: number;
@@ -298,17 +314,12 @@ function combineSignals(
     };
 }
 
-async function addAuthorizationHeader(
+function setAuthorizationHeader(
     headers: Headers,
-    requiresAuth: boolean,
-): Promise<void> {
-    if (!requiresAuth) {
-        return;
-    }
-
-    const accessToken = await getAccessToken();
-
+    accessToken: string | null,
+): void {
     if (!accessToken) {
+        headers.delete("Authorization");
         return;
     }
 
@@ -316,6 +327,80 @@ async function addAuthorizationHeader(
         "Authorization",
         `Bearer ${accessToken}`,
     );
+}
+
+async function refreshAccessToken(): Promise<string | null> {
+    if (refreshPromise) {
+        return refreshPromise;
+    }
+
+    refreshPromise = (async () => {
+        const refreshToken = await getRefreshToken();
+
+        if (!refreshToken) {
+            return null;
+        }
+
+        try {
+            const response = await fetch(
+                buildUrl("/auth/refresh"),
+                {
+                    method: "POST",
+                    headers: {
+                        Accept: "application/json",
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        refreshToken,
+                    }),
+                },
+            );
+
+            const data = await parseResponseBody(response);
+
+            if (!response.ok) {
+                /*
+                 * A 401 or 403 means the refresh token is no longer usable.
+                 * Do not clear tokens for temporary network/server failures.
+                 */
+                if (
+                    response.status === 401 ||
+                    response.status === 403
+                ) {
+                    await clearAuthTokens();
+                }
+
+                return null;
+            }
+
+            const tokens = data as RefreshTokenResponse;
+
+            if (
+                !tokens.accessToken ||
+                !tokens.refreshToken
+            ) {
+                return null;
+            }
+
+            await saveAuthTokens({
+                accessToken: tokens.accessToken,
+                refreshToken: tokens.refreshToken,
+            });
+
+            return tokens.accessToken;
+        } catch (error) {
+            console.error(
+                "Failed to refresh access token:",
+                error,
+            );
+
+            return null;
+        } finally {
+            refreshPromise = null;
+        }
+    })();
+
+    return refreshPromise;
 }
 
 async function request<T>(
@@ -340,10 +425,16 @@ async function request<T>(
         "application/json",
     );
 
-    await addAuthorizationHeader(
-        headers,
-        requiresAuth,
-    );
+    let accessToken = requiresAuth
+        ? await getAccessToken()
+        : null;
+
+    if (requiresAuth) {
+        setAuthorizationHeader(
+            headers,
+            accessToken,
+        );
+    }
 
     const requestBody = createRequestBody(
         body,
@@ -360,12 +451,42 @@ async function request<T>(
     );
 
     try {
-        const response = await fetch(url, {
-            method,
-            headers,
-            body: requestBody,
-            signal,
-        });
+        const sendRequest = async (
+            token: string | null,
+        ): Promise<Response> => {
+            const requestHeaders = new Headers(headers);
+
+            if (requiresAuth) {
+                setAuthorizationHeader(
+                    requestHeaders,
+                    token,
+                );
+            }
+
+            return fetch(url, {
+                method,
+                headers: requestHeaders,
+                body: requestBody,
+                signal,
+            });
+        };
+
+        let response = await sendRequest(accessToken);
+
+        /*
+         * Retry an authenticated request once after refreshing its expired
+         * access token. Public endpoints never enter this flow.
+         */
+        if (
+            requiresAuth &&
+            response.status === 401
+        ) {
+            accessToken = await refreshAccessToken();
+
+            if (accessToken) {
+                response = await sendRequest(accessToken);
+            }
+        }
 
         const data =
             await parseResponseBody(response);

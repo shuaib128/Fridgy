@@ -1,11 +1,16 @@
 export type VerifiedGoogleUser = {
-    googleId: string;
-    email: string;
-    emailVerified: boolean;
+    id: string;
     name: string | null;
     givenName: string | null;
     familyName: string | null;
-    picture: string | null;
+    email: string;
+    emailVerified: boolean;
+    profileImage: string | null;
+    role: string;
+    isActive: boolean;
+    measurementSystem: string;
+    createdAt: string;
+    timezone: string;
 };
 
 export type GoogleAuthResponse = {

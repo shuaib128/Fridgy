@@ -6,8 +6,9 @@ import {
     StyleSheet,
     Text,
     View,
+    Image
 } from "react-native";
-
+import { useUserStore } from "@/stores/auth-store";
 import { logout } from "@/auth/logout";
 import { Screen } from "@/components/ui/screen";
 import { theme } from "@/styles/theme";
@@ -84,18 +85,13 @@ const APP_ITEMS: MenuItem[] = [
 ];
 
 export default function ProfileScreen() {
-    const [expiryReminders, setExpiryReminders] =
-        useState(true);
+    const user = useUserStore((state) => state.user);
 
-    const [lowStockReminders, setLowStockReminders] =
-        useState(true);
+    const [expiryReminders, setExpiryReminders] = useState(true);
+    const [lowStockReminders, setLowStockReminders] = useState(true);
+    const [mealSuggestions, setMealSuggestions] = useState(false);
 
-    const [mealSuggestions, setMealSuggestions] =
-        useState(false);
-
-    const getIconBackground = (
-        background: MenuItem["iconBackground"],
-    ) => {
+    const getIconBackground = (background: MenuItem["iconBackground"]) => {
         switch (background) {
             case "primary":
                 return styles.primaryIconBackground;
@@ -182,6 +178,7 @@ export default function ProfileScreen() {
             );
         }
     }
+
     function confirmLogout() {
         Alert.alert(
             "Log out?",
@@ -222,9 +219,20 @@ export default function ProfileScreen() {
             <View style={styles.profileCard}>
                 <View style={styles.avatarOuter}>
                     <View style={styles.avatar}>
-                        <Text style={styles.avatarText}>
-                            SA
-                        </Text>
+                        {user?.profileImage ? (
+                            <Image
+                                source={{ uri: user.profileImage }}
+                                style={styles.avatarImage}
+                                resizeMode="cover"
+                            />
+                        ) : (
+                            <Text style={styles.avatarText}>
+                                {user?.name
+                                    ?.trim()
+                                    .slice(0, 2)
+                                    .toUpperCase() || "??"}
+                            </Text>
+                        )}
                     </View>
 
                     <Pressable
@@ -247,11 +255,11 @@ export default function ProfileScreen() {
 
                 <View style={styles.profileContent}>
                     <Text style={styles.profileName}>
-                        Shuaib Ahamed
+                        {user?.name}
                     </Text>
 
                     <Text style={styles.profileEmail}>
-                        shuaib@example.com
+                        {user?.email}
                     </Text>
 
                     <View style={styles.profileBadge}>
@@ -483,11 +491,17 @@ const styles = StyleSheet.create({
         height: 74,
         alignItems: "center",
         justifyContent: "center",
+        overflow: "hidden",
         backgroundColor: theme.colors.accent,
         borderRadius: theme.radii.full,
         borderWidth: 4,
         borderColor: theme.colors.primaryLight,
         ...theme.shadows.small,
+    },
+
+    avatarImage: {
+        width: "100%",
+        height: "100%",
     },
 
     avatarText: {

@@ -3,13 +3,13 @@ import {
     getRefreshToken,
 } from "@/auth/token-storage";
 import api, { ApiError } from "@/hooks/api";
-import { User } from "@/types/user";
+import { VerifiedGoogleUser } from "@/types/auth";
 
 type CurrentUserResponse = {
-    user: User;
+    user: VerifiedGoogleUser;
 };
 
-export async function getCurrentUser(): Promise<User | null> {
+export async function getCurrentUser(): Promise<VerifiedGoogleUser | null> {
     const [
         accessToken,
         refreshToken,

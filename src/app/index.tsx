@@ -3,12 +3,15 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, View } from "react-native";
 
 import { getCurrentUser } from "@/auth/current-user";
-import type { User } from "@/types/user";
+import { useUserStore } from "@/stores/auth-store";
 
 const hasCompletedOnboarding = true;
 
 export default function IndexScreen() {
-  const [user, setUser] = useState<User | null>(null);
+  const user = useUserStore((state) => state.user);
+  const setUser = useUserStore((state) => state.setUser);
+  const clearUser = useUserStore((state) => state.clearUser);
+
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   useEffect(() => {
@@ -18,14 +21,20 @@ export default function IndexScreen() {
       try {
         const currentUser = await getCurrentUser();
 
-        if (isMounted) {
+        if (!isMounted) {
+          return;
+        }
+
+        if (currentUser) {
           setUser(currentUser);
+        } else {
+          clearUser();
         }
       } catch (error) {
         console.error("Failed to restore authentication:", error);
 
         if (isMounted) {
-          setUser(null);
+          clearUser();
 
           Alert.alert(
             "Unable to connect",
@@ -44,7 +53,7 @@ export default function IndexScreen() {
     return () => {
       isMounted = false;
     };
-  }, [setUser]);
+  }, [setUser, clearUser]);
 
   if (isCheckingAuth) {
     return (

@@ -131,9 +131,6 @@ export default function LoginScreen() {
         }
     };
 
-    // Logout handler
-    const handleSignOut = async (): Promise<void> => { };
-
     return (
         <Screen
             padded={false}

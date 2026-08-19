@@ -4,7 +4,6 @@ import {
     Alert,
     Pressable,
     StyleSheet,
-    Switch,
     Text,
     View,
 } from "react-native";
@@ -14,6 +13,9 @@ import { Screen } from "@/components/ui/screen";
 import { theme } from "@/styles/theme";
 import { router } from "expo-router";
 import { PageHeader } from "../../components/navigation/screen-header";
+import AccountSection from "@/components/profile/AccountSection";
+import SmartRemindersSection from "@/components/profile/SmartRemindersSection";
+import AppSettingsSection from "@/components/profile/AppSettingsSection";
 
 type MenuItem = {
     id: string;
@@ -368,253 +370,24 @@ export default function ProfileScreen() {
                 </View>
             </View>
 
-            <View style={styles.sectionHeader}>
-                <View>
-                    <Text style={styles.sectionTitle}>
-                        Account
-                    </Text>
+            <AccountSection
+                items={ACCOUNT_ITEMS}
+                renderMenuItem={renderMenuItem}
+            />
 
-                    <Text style={styles.sectionSubtitle}>
-                        Your personal and household settings
-                    </Text>
-                </View>
-            </View>
+            <SmartRemindersSection
+                expiryReminders={expiryReminders}
+                setExpiryReminders={setExpiryReminders}
+                lowStockReminders={lowStockReminders}
+                setLowStockReminders={setLowStockReminders}
+                mealSuggestions={mealSuggestions}
+                setMealSuggestions={setMealSuggestions}
+            />
 
-            <View style={styles.menuCard}>
-                {ACCOUNT_ITEMS.map((item, index) => (
-                    <View key={item.id}>
-                        {renderMenuItem(item)}
-
-                        {index <
-                            ACCOUNT_ITEMS.length - 1 && (
-                                <View
-                                    style={
-                                        styles.menuDivider
-                                    }
-                                />
-                            )}
-                    </View>
-                ))}
-            </View>
-
-            <View style={styles.sectionHeader}>
-                <View>
-                    <Text style={styles.sectionTitle}>
-                        Smart reminders
-                    </Text>
-
-                    <Text style={styles.sectionSubtitle}>
-                        Choose which updates Fridgy should
-                        send
-                    </Text>
-                </View>
-            </View>
-
-            <View style={styles.reminderCard}>
-                <View style={styles.reminderRow}>
-                    <View
-                        style={[
-                            styles.menuIcon,
-                            styles.accentIconBackground,
-                        ]}
-                    >
-                        <Ionicons
-                            name="time-outline"
-                            size={theme.iconSizes.md}
-                            color={
-                                theme.colors.primaryDark
-                            }
-                        />
-                    </View>
-
-                    <View
-                        style={styles.reminderContent}
-                    >
-                        <Text
-                            style={styles.reminderTitle}
-                        >
-                            Expiry reminders
-                        </Text>
-
-                        <Text
-                            style={
-                                styles.reminderDescription
-                            }
-                        >
-                            Get notified before food expires.
-                        </Text>
-                    </View>
-
-                    <Switch
-                        value={expiryReminders}
-                        onValueChange={
-                            setExpiryReminders
-                        }
-                        trackColor={{
-                            false:
-                                theme.colors.borderStrong,
-                            true:
-                                theme.colors.primaryLight,
-                        }}
-                        thumbColor={
-                            expiryReminders
-                                ? theme.colors.primary
-                                : theme.colors.surface
-                        }
-                        ios_backgroundColor={
-                            theme.colors.borderStrong
-                        }
-                    />
-                </View>
-
-                <View style={styles.menuDivider} />
-
-                <View style={styles.reminderRow}>
-                    <View
-                        style={[
-                            styles.menuIcon,
-                            styles.softIconBackground,
-                        ]}
-                    >
-                        <Ionicons
-                            name="basket-outline"
-                            size={theme.iconSizes.md}
-                            color={
-                                theme.colors.primaryDark
-                            }
-                        />
-                    </View>
-
-                    <View
-                        style={styles.reminderContent}
-                    >
-                        <Text
-                            style={styles.reminderTitle}
-                        >
-                            Low-stock reminders
-                        </Text>
-
-                        <Text
-                            style={
-                                styles.reminderDescription
-                            }
-                        >
-                            Know when pantry items are
-                            running low.
-                        </Text>
-                    </View>
-
-                    <Switch
-                        value={lowStockReminders}
-                        onValueChange={
-                            setLowStockReminders
-                        }
-                        trackColor={{
-                            false:
-                                theme.colors.borderStrong,
-                            true:
-                                theme.colors.primaryLight,
-                        }}
-                        thumbColor={
-                            lowStockReminders
-                                ? theme.colors.primary
-                                : theme.colors.surface
-                        }
-                        ios_backgroundColor={
-                            theme.colors.borderStrong
-                        }
-                    />
-                </View>
-
-                <View style={styles.menuDivider} />
-
-                <View style={styles.reminderRow}>
-                    <View
-                        style={[
-                            styles.menuIcon,
-                            styles.primaryIconBackground,
-                        ]}
-                    >
-                        <Ionicons
-                            name="sparkles-outline"
-                            size={theme.iconSizes.md}
-                            color={
-                                theme.colors.textInverse
-                            }
-                        />
-                    </View>
-
-                    <View
-                        style={styles.reminderContent}
-                    >
-                        <Text
-                            style={styles.reminderTitle}
-                        >
-                            Meal suggestions
-                        </Text>
-
-                        <Text
-                            style={
-                                styles.reminderDescription
-                            }
-                        >
-                            Receive ideas based on your
-                            inventory.
-                        </Text>
-                    </View>
-
-                    <Switch
-                        value={mealSuggestions}
-                        onValueChange={
-                            setMealSuggestions
-                        }
-                        trackColor={{
-                            false:
-                                theme.colors.borderStrong,
-                            true:
-                                theme.colors.primaryLight,
-                        }}
-                        thumbColor={
-                            mealSuggestions
-                                ? theme.colors.primary
-                                : theme.colors.surface
-                        }
-                        ios_backgroundColor={
-                            theme.colors.borderStrong
-                        }
-                    />
-                </View>
-            </View>
-
-            <View style={styles.sectionHeader}>
-                <View>
-                    <Text style={styles.sectionTitle}>
-                        App settings
-                    </Text>
-
-                    <Text style={styles.sectionSubtitle}>
-                        Notifications, appearance, and
-                        privacy
-                    </Text>
-                </View>
-            </View>
-
-            <View style={styles.menuCard}>
-                {APP_ITEMS.map((item, index) => (
-                    <View key={item.id}>
-                        {renderMenuItem(item)}
-
-                        {index <
-                            APP_ITEMS.length - 1 && (
-                                <View
-                                    style={
-                                        styles.menuDivider
-                                    }
-                                />
-                            )}
-                    </View>
-                ))}
-            </View>
+            <AppSettingsSection
+                items={APP_ITEMS}
+                renderMenuItem={renderMenuItem}
+            />
 
             <View style={styles.supportCard}>
                 <View style={styles.supportIcon}>
@@ -836,34 +609,6 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.border,
     },
 
-    sectionHeader: {
-        marginTop: theme.spacing["2xl"],
-        marginBottom: theme.spacing.md,
-    },
-
-    sectionTitle: {
-        color: theme.colors.text,
-        fontSize: theme.fontSizes.xl,
-        lineHeight: theme.lineHeights.xl,
-        fontWeight: theme.fontWeights.extraBold,
-    },
-
-    sectionSubtitle: {
-        color: theme.colors.textMuted,
-        fontSize: theme.fontSizes.xs,
-        lineHeight: theme.lineHeights.xs,
-        marginTop: 2,
-    },
-
-    menuCard: {
-        paddingHorizontal: theme.spacing.md,
-        backgroundColor: theme.colors.surface,
-        borderRadius: theme.radii["2xl"],
-        borderWidth: 1,
-        borderColor: theme.colors.border,
-        ...theme.shadows.medium,
-    },
-
     menuItem: {
         minHeight: 82,
         flexDirection: "row",
@@ -931,50 +676,6 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         backgroundColor: theme.colors.backgroundMuted,
         borderRadius: theme.radii.full,
-    },
-
-    menuDivider: {
-        height: 1,
-        marginLeft:
-            48 +
-            theme.spacing.md,
-        backgroundColor: theme.colors.border,
-    },
-
-    reminderCard: {
-        paddingHorizontal: theme.spacing.md,
-        backgroundColor: theme.colors.surface,
-        borderRadius: theme.radii["2xl"],
-        borderWidth: 1,
-        borderColor: theme.colors.border,
-        ...theme.shadows.medium,
-    },
-
-    reminderRow: {
-        minHeight: 88,
-        flexDirection: "row",
-        alignItems: "center",
-        gap: theme.spacing.md,
-        paddingVertical: theme.spacing.md,
-    },
-
-    reminderContent: {
-        flex: 1,
-        minWidth: 0,
-    },
-
-    reminderTitle: {
-        color: theme.colors.text,
-        fontSize: theme.fontSizes.md,
-        lineHeight: theme.lineHeights.md,
-        fontWeight: theme.fontWeights.bold,
-    },
-
-    reminderDescription: {
-        color: theme.colors.textMuted,
-        fontSize: theme.fontSizes.xs,
-        lineHeight: theme.lineHeights.xs,
-        marginTop: 2,
     },
 
     supportCard: {

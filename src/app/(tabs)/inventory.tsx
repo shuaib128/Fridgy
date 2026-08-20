@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
+    ActivityIndicator,
     FlatList,
     Pressable,
     StyleSheet,
@@ -8,15 +9,15 @@ import {
     TextInput,
     View,
 } from "react-native";
-
+import { useInventoryStore } from "@/stores/inventory-store";
 import {
     InventoryItemCard,
-    type InventoryItem,
 } from "../../components/inventory/inventory-item-card";
-
+import { InventoryItem } from "@/types/inventory-item";
 import { Screen } from "@/components/ui/screen";
 import { theme } from "@/styles/theme";
 import { PageHeader } from "../../components/navigation/screen-header";
+import { getInventoryItems } from "@/components/inventory/get-inventory-items";
 
 type InventoryCategory =
     | "All"
@@ -33,71 +34,56 @@ const CATEGORIES: InventoryCategory[] = [
     "Pantry",
 ];
 
-const INVENTORY_ITEMS: InventoryItem[] = [
-    {
-        id: "1",
-        name: "Avocados",
-        category: "Produce",
-        quantity: "3 remaining",
-        expiresIn: 2,
-        icon: "leaf-outline",
-    },
-    {
-        id: "2",
-        name: "Whole Milk",
-        category: "Dairy",
-        quantity: "1 carton",
-        expiresIn: 4,
-        icon: "water-outline",
-    },
-    {
-        id: "3",
-        name: "Chicken Breast",
-        category: "Meat",
-        quantity: "2 pieces",
-        expiresIn: 1,
-        icon: "restaurant-outline",
-    },
-    {
-        id: "4",
-        name: "Eggs",
-        category: "Dairy",
-        quantity: "8 remaining",
-        expiresIn: 6,
-        icon: "egg-outline",
-    },
-    {
-        id: "5",
-        name: "Tomatoes",
-        category: "Produce",
-        quantity: "5 remaining",
-        expiresIn: 3,
-        icon: "nutrition-outline",
-    },
-    {
-        id: "6",
-        name: "Pasta",
-        category: "Pantry",
-        quantity: "1 package",
-        expiresIn: 30,
-        icon: "fast-food-outline",
-    },
-];
-
 export default function InventoryScreen() {
     const [search, setSearch] = useState("");
-    const [selectedCategory, setSelectedCategory] =
-        useState<InventoryCategory>("All");
+    const [selectedCategory, setSelectedCategory] = useState<InventoryCategory>("All");
+    const inventoryItems = useInventoryStore((state) => state.items);
+    const setInventoryItems = useInventoryStore((state) => state.setItems);
+    const [isLoading, setIsLoading] = useState(true);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+    // Fetch the inventory items
+    useEffect(() => {
+        let isMounted = true;
+
+        async function loadInventoryItems() {
+            try {
+                setErrorMessage(null);
+
+                const items = await getInventoryItems();
+
+                if (isMounted) {
+                    setInventoryItems(items);
+                }
+            } catch (error) {
+                console.error("Failed to load inventory items:", error);
+
+                if (isMounted) {
+                    setErrorMessage("Could not load your inventory.");
+                }
+            } finally {
+                if (isMounted) {
+                    setIsLoading(false);
+                }
+            }
+        }
+
+        loadInventoryItems();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
 
     const filteredItems = useMemo(() => {
-        const normalizedSearch = search
-            .trim()
-            .toLowerCase();
+        const normalizedSearch = search.trim().toLowerCase();
+        const normalizedCategory =
+            selectedCategory.trim().toLowerCase();
 
-        return INVENTORY_ITEMS.filter((item) => {
+        return inventoryItems.filter((item) => {
             const matchesCategory =
-                selectedCategory === "All" ||
-                item.category === selectedCategory;
+                normalizedCategory === "all" ||
+                item.category === normalizedCategory;
 
             const matchesSearch =
                 normalizedSearch.length === 0 ||
@@ -107,15 +93,40 @@ export default function InventoryScreen() {
 
             return matchesCategory && matchesSearch;
         });
-    }, [search, selectedCategory]);
+    }, [inventoryItems, search, selectedCategory]);
 
-    const expiringSoonCount = INVENTORY_ITEMS.filter(
-        (item) => item.expiresIn <= 3,
-    ).length;
+    const expiringSoonCount = useMemo(() => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
-    const renderInventoryItem = ({
-        item,
-    }: {
+        const millisecondsPerDay = 1000 * 60 * 60 * 24;
+
+        return inventoryItems.filter((item) => {
+            if (!item.expirationDate) {
+                return false;
+            }
+
+            const expirationDate = new Date(
+                item.expirationDate,
+            );
+
+            if (Number.isNaN(expirationDate.getTime())) {
+                return false;
+            }
+
+            expirationDate.setHours(0, 0, 0, 0);
+
+            const expiresIn = Math.round(
+                (expirationDate.getTime() -
+                    today.getTime()) /
+                millisecondsPerDay,
+            );
+
+            return expiresIn >= 0 && expiresIn <= 3;
+        }).length;
+    }, [inventoryItems]);
+
+    const renderInventoryItem = ({ item }: {
         item: InventoryItem;
     }) => (
         <InventoryItemCard
@@ -124,10 +135,25 @@ export default function InventoryScreen() {
         />
     );
 
-    const handleInventoryItemPress = (
-        item: InventoryItem,
-    ) => {
+    // Item press handler
+    const handleInventoryItemPress = (item: InventoryItem) => {
     };
+
+    if (isLoading) {
+        return (
+            <View>
+                <ActivityIndicator />
+            </View>
+        );
+    }
+
+    if (errorMessage) {
+        return (
+            <View>
+                <Text>{errorMessage}</Text>
+            </View>
+        );
+    }
 
     return (
         <Screen
@@ -183,7 +209,7 @@ export default function InventoryScreen() {
                                 <Text
                                     style={styles.summaryValue}
                                 >
-                                    {INVENTORY_ITEMS.length} items
+                                    {inventoryItems.length} items
                                 </Text>
 
                                 <Text
@@ -333,8 +359,7 @@ export default function InventoryScreen() {
                                         styles.sectionSubtitle
                                     }
                                 >
-                                    {filteredItems.length} items
-                                    shown
+                                    {filteredItems.length} items shown
                                 </Text>
                             </View>
 

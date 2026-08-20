@@ -39,17 +39,8 @@ import { QuantitySection } from "./modal/quantity-section";
 import { SmartExpirationSuggestion } from "./modal/smart-expiration-suggestion";
 import { StorageSection } from "./modal/storage-section";
 import { SuccessState } from "./modal/success-state";
-
-export type CategoryId =
-    | "produce"
-    | "meat"
-    | "dairy"
-    | "bakery"
-    | "pantry"
-    | "frozen"
-    | "drinks";
-
-export type StorageId = "fridge" | "freezer" | "pantry";
+import { CategoryID } from "@/types/inventory-item";
+import { StorageID } from "@/types/inventory-item";
 
 export type ExpirationOption =
     | "today"
@@ -62,8 +53,8 @@ export type ExpirationOption =
 export type FoodSuggestion = {
     name: string;
     emoji: string;
-    category: CategoryId;
-    storage: StorageId;
+    category: CategoryID;
+    storage: StorageID;
     unit: string;
     recommendedDays: number;
     meals: string[];
@@ -74,8 +65,8 @@ export type ManualKitchenItem = {
     emoji: string;
     quantity: number;
     unit: string;
-    category: CategoryId;
-    storage: StorageId;
+    category: CategoryID;
+    storage: StorageID;
     expiration: ExpirationOption;
     expirationDate: Date | null;
     notes: string;
@@ -88,6 +79,45 @@ export type AddManuallyModalProps = {
 };
 
 const FOOD_DATABASE: FoodSuggestion[] = [
+    {
+        name: "Rice",
+        emoji: "🍚",
+        category: "pantry",
+        storage: "pantry",
+        unit: "Bag",
+        recommendedDays: 365,
+        meals: [
+            "Chicken Biryani",
+            "Fried Rice",
+            "Chicken Rice Bowl",
+        ],
+    },
+    {
+        name: "Frozen Vegetables",
+        emoji: "🫛",
+        category: "frozen",
+        storage: "freezer",
+        unit: "Bag",
+        recommendedDays: 240,
+        meals: [
+            "Vegetable Stir Fry",
+            "Vegetable Soup",
+            "Vegetable Fried Rice",
+        ],
+    },
+    {
+        name: "Other Food",
+        emoji: "🥫",
+        category: "other",
+        storage: "pantry",
+        unit: "Pack",
+        recommendedDays: 7,
+        meals: [
+            "Mixed Food Bowl",
+            "Quick Snack",
+            "Leftover Meal",
+        ],
+    },
     {
         name: "Chicken Breast",
         emoji: "🍗",
@@ -221,7 +251,7 @@ const FOOD_DATABASE: FoodSuggestion[] = [
 ];
 
 export const CATEGORIES: {
-    id: CategoryId;
+    id: CategoryID;
     label: string;
     emoji: string;
 }[] = [
@@ -232,9 +262,10 @@ export const CATEGORIES: {
         { id: "pantry", label: "Pantry", emoji: "🥫" },
         { id: "frozen", label: "Frozen", emoji: "🧊" },
         { id: "drinks", label: "Drinks", emoji: "🥤" },
+        { id: "other", label: "Other", emoji: "🥡" },
     ];
 
-const EXPIRATION_OPTIONS: {
+export const EXPIRATION_OPTIONS: {
     id: ExpirationOption;
     label: string;
     days: number | null;
@@ -323,12 +354,10 @@ export function AddManuallyModal({
     const [foodName, setFoodName] = useState("");
     const [quantity, setQuantity] = useState(1);
     const [unit, setUnit] = useState("Pieces");
-    const [category, setCategory] = useState<CategoryId>("produce");
-    const [storage, setStorage] = useState<StorageId>("fridge");
-    const [expiration, setExpiration] =
-        useState<ExpirationOption>("3-days");
-    const [customExpirationDate, setCustomExpirationDate] =
-        useState<Date | null>(null);
+    const [category, setCategory] = useState<CategoryID>("produce");
+    const [storage, setStorage] = useState<StorageID>("fridge");
+    const [expiration, setExpiration] = useState<ExpirationOption>("3-days");
+    const [customExpirationDate, setCustomExpirationDate] = useState<Date | null>(null);
     const [notes, setNotes] = useState("");
     const [notesExpanded, setNotesExpanded] = useState(false);
     const [unitsExpanded, setUnitsExpanded] = useState(false);
@@ -343,26 +372,30 @@ export function AddManuallyModal({
 
         return (
             FOOD_DATABASE.find(
-                (food) => food.name.toLowerCase() === normalizedName,
-            ) ??
-            FOOD_DATABASE.find((food) =>
-                food.name.toLowerCase().startsWith(normalizedName),
-            ) ??
-            null
+                (food) =>
+                    food.name.toLowerCase() === normalizedName,
+            ) ?? null
         );
     }, [foodName]);
 
     const suggestions = useMemo(() => {
         const normalizedName = foodName.trim().toLowerCase();
 
-        if (!normalizedName) return [];
+        if (!normalizedName || matchedFood) return [];
 
         return FOOD_DATABASE.filter((food) =>
             food.name.toLowerCase().includes(normalizedName),
         ).slice(0, 4);
-    }, [foodName]);
+    }, [foodName, matchedFood]);
 
-    const foodEmoji = matchedFood?.emoji ?? "🥕";
+    const categoryEmoji = useMemo(() => {
+        return (
+            CATEGORIES.find((item) => item.id === category)?.emoji ??
+            "🥫"
+        );
+    }, [category]);
+
+    const foodEmoji = matchedFood?.emoji ?? categoryEmoji;
     const smartExpiration = matchedFood?.recommendedDays ?? null;
     const suggestedMeals = matchedFood?.meals ?? [];
     const canSubmit = foodName.trim().length > 0 && !isAdding;
@@ -479,7 +512,7 @@ export function AddManuallyModal({
 
                                 <FoodSuggestions
                                     suggestions={suggestions}
-                                    hidden={Boolean(matchedFood)}
+                                    hidden={suggestions.length === 0}
                                     onSelect={applyFoodSuggestion}
                                 />
 

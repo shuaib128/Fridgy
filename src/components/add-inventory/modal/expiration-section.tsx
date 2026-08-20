@@ -15,19 +15,7 @@ import {
     spacing,
 } from "@/styles/theme";
 import { ExpirationOption } from "../add-manually-modal";
-
-const EXPIRATION_OPTIONS: {
-    id: ExpirationOption;
-    label: string;
-    days: number | null;
-}[] = [
-        { id: "today", label: "Today", days: 0 },
-        { id: "tomorrow", label: "Tomorrow", days: 1 },
-        { id: "3-days", label: "3 Days", days: 3 },
-        { id: "1-week", label: "1 Week", days: 7 },
-        { id: "2-weeks", label: "2 Weeks", days: 14 },
-        { id: "pick-date", label: "Pick Date", days: null },
-    ];
+import { EXPIRATION_OPTIONS } from "../add-manually-modal";
 
 const QUICK_DATE_OPTIONS = [
     { label: "In 3 days", days: 3 },

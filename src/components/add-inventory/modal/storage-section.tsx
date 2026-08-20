@@ -13,11 +13,11 @@ import {
     shadows,
     spacing,
 } from "@/styles/theme";
-import { StorageId } from "../add-manually-modal";
+import { StorageID } from "@/types/inventory-item";
 
 
 const STORAGE_OPTIONS: {
-    id: StorageId;
+    id: StorageID;
     label: string;
     emoji: string;
 }[] = [
@@ -39,8 +39,8 @@ const STORAGE_OPTIONS: {
     ];
 
 type StorageSectionProps = {
-    selectedStorage: StorageId;
-    onSelect: (storage: StorageId) => void;
+    selectedStorage: StorageID;
+    onSelect: (storage: StorageID) => void;
 };
 
 export function StorageSection({

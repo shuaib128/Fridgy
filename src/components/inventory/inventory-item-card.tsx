@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import type { ComponentProps } from "react";
 import {
     Pressable,
     StyleSheet,
@@ -16,31 +17,90 @@ import {
     shadows,
     spacing,
 } from "@/styles/theme";
+import type {
+    CategoryID,
+    InventoryItem,
+} from "@/types/inventory-item";
 
-export type InventoryItem = {
-    id: string;
-    name: string;
-    quantity: string;
-    category: string;
-    expiresIn: number;
-    icon: keyof typeof Ionicons.glyphMap;
-};
+type IoniconName = ComponentProps<typeof Ionicons>["name"];
 
 type InventoryItemCardProps = {
     item: InventoryItem;
     onPress?: (item: InventoryItem) => void;
 };
 
+const CATEGORY_ICONS: Record<CategoryID, IoniconName> = {
+    produce: "leaf-outline",
+    meat: "restaurant-outline",
+    dairy: "water-outline",
+    pantry: "fast-food-outline",
+    frozen: "snow-outline",
+    drinks: "cafe-outline",
+    other: "cube-outline",
+    bakery: "cafe-outline",
+};
+
+// Get days untill experations
+function getDaysUntilExpiration(expirationDate?: string): number | null {
+    if (!expirationDate) {
+        return null;
+    }
+
+    const expiration = new Date(expirationDate);
+    const today = new Date();
+
+    if (Number.isNaN(expiration.getTime())) {
+        return null;
+    }
+
+    expiration.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+
+    const millisecondsPerDay = 1000 * 60 * 60 * 24;
+
+    return Math.round(
+        (expiration.getTime() - today.getTime()) /
+        millisecondsPerDay,
+    );
+}
+
+// Generate the label
+function getExpirationLabel(expiresIn: number | null): string {
+    if (expiresIn === null) {
+        return "No expiry";
+    }
+
+    if (expiresIn < 0) {
+        const daysExpired = Math.abs(expiresIn);
+        return daysExpired === 1 ? "Expired 1 day ago" : `Expired ${daysExpired} days ago`;
+    }
+
+    if (expiresIn === 0) {
+        return "Expires today";
+    }
+
+    if (expiresIn === 1) {
+        return "1 day";
+    }
+
+    return `${expiresIn} days`;
+}
+
+function formatQuantity(
+    quantity: number,
+    unit: string,
+): string {
+    return `${quantity} ${unit}`;
+}
+
 export function InventoryItemCard({
     item,
     onPress,
 }: InventoryItemCardProps) {
-    const isUrgent = item.expiresIn <= 2;
-
-    const expiryLabel =
-        item.expiresIn === 1
-            ? "1 day"
-            : `${item.expiresIn} days`;
+    const expiresIn = getDaysUntilExpiration(item.expirationDate);
+    const expiryLabel = getExpirationLabel(expiresIn);
+    const isUrgent = expiresIn !== null && expiresIn <= 2;
+    const categoryIcon = CATEGORY_ICONS[item.category];
 
     return (
         <Pressable
@@ -53,20 +113,32 @@ export function InventoryItemCard({
             ]}
         >
             <View style={styles.itemIconContainer}>
-                <Ionicons
-                    name={item.icon}
-                    size={iconSizes.lg}
-                    color={colors.primaryDark}
-                />
+                {item.emoji ? (
+                    <Text style={styles.itemEmoji}>
+                        {item.emoji}
+                    </Text>
+                ) : (
+                    <Ionicons
+                        name={categoryIcon}
+                        size={iconSizes.lg}
+                        color={colors.primaryDark}
+                    />
+                )}
             </View>
 
             <View style={styles.itemContent}>
-                <Text style={styles.itemName}>
+                <Text
+                    numberOfLines={1}
+                    style={styles.itemName}
+                >
                     {item.name}
                 </Text>
 
                 <Text style={styles.itemQuantity}>
-                    {item.quantity}
+                    {formatQuantity(
+                        item.quantity,
+                        item.unit,
+                    )}
                 </Text>
             </View>
 
@@ -137,6 +209,11 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         backgroundColor: colors.backgroundMuted,
         borderRadius: radii.lg,
+    },
+
+    itemEmoji: {
+        fontSize: 28,
+        lineHeight: 34,
     },
 
     itemContent: {

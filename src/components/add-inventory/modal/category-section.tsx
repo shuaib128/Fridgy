@@ -12,25 +12,12 @@ import {
     radii,
     spacing,
 } from "@/styles/theme";
-import { CategoryId } from "../add-manually-modal";
-
-const CATEGORIES: {
-    id: CategoryId;
-    label: string;
-    emoji: string;
-}[] = [
-        { id: "produce", label: "Produce", emoji: "🥬" },
-        { id: "meat", label: "Meat", emoji: "🥩" },
-        { id: "dairy", label: "Dairy", emoji: "🥛" },
-        { id: "bakery", label: "Bakery", emoji: "🍞" },
-        { id: "pantry", label: "Pantry", emoji: "🥫" },
-        { id: "frozen", label: "Frozen", emoji: "🧊" },
-        { id: "drinks", label: "Drinks", emoji: "🥤" },
-    ];
+import { CategoryID } from "@/types/inventory-item";
+import { CATEGORIES } from "../add-manually-modal";
 
 type CategorySectionProps = {
-    selectedCategory: CategoryId;
-    onSelect: (category: CategoryId) => void;
+    selectedCategory: CategoryID;
+    onSelect: (category: CategoryID) => void;
 };
 
 export function CategorySection({

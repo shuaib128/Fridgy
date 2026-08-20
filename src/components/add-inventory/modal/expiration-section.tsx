@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
-
+import { ExpirationOption, EXPIRATION_OPTIONS } from "@/types/inventory-item";
 import {
     colors,
     fontSizes,
@@ -14,8 +14,6 @@ import {
     shadows,
     spacing,
 } from "@/styles/theme";
-import { ExpirationOption } from "../add-manually-modal";
-import { EXPIRATION_OPTIONS } from "../add-manually-modal";
 
 const QUICK_DATE_OPTIONS = [
     { label: "In 3 days", days: 3 },

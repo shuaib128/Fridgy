@@ -12,8 +12,7 @@ import {
     radii,
     spacing,
 } from "@/styles/theme";
-import { CategoryID } from "@/types/inventory-item";
-import { CATEGORIES } from "../add-manually-modal";
+import { CategoryID, CATEGORIES } from "@/types/inventory-item";
 
 type CategorySectionProps = {
     selectedCategory: CategoryID;

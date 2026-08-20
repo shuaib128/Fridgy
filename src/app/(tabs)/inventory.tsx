@@ -8,6 +8,8 @@ import {
     Text,
     TextInput,
     View,
+    RefreshControl,
+    Alert,
 } from "react-native";
 import { useInventoryStore } from "@/stores/inventory-store";
 import {
@@ -18,6 +20,8 @@ import { Screen } from "@/components/ui/screen";
 import { theme } from "@/styles/theme";
 import { PageHeader } from "../../components/navigation/screen-header";
 import { getInventoryItems } from "@/components/inventory/get-inventory-items";
+import ReanimatedSwipeable from "react-native-gesture-handler/ReanimatedSwipeable";
+import api from "@/hooks/api";
 
 type InventoryCategory =
     | "All"
@@ -39,7 +43,9 @@ export default function InventoryScreen() {
     const [selectedCategory, setSelectedCategory] = useState<InventoryCategory>("All");
     const inventoryItems = useInventoryStore((state) => state.items);
     const setInventoryItems = useInventoryStore((state) => state.setItems);
+    const removeInventoryItem = useInventoryStore((state) => state.removeItem);
     const [isLoading, setIsLoading] = useState(true);
+    const [isRefreshing, setisRefreshing] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     // Fetch the inventory items
@@ -74,6 +80,64 @@ export default function InventoryScreen() {
             isMounted = false;
         };
     }, []);
+
+    // handle refresh
+    const handleRefresh = async () => {
+        try {
+            setisRefreshing(true);
+            setErrorMessage(null);
+
+            const items = await getInventoryItems();
+
+            setInventoryItems(items);
+        } catch (error) {
+            console.error(
+                "Failed to refresh inventory items:",
+                error,
+            );
+
+            setErrorMessage(
+                "Could not refresh your inventory.",
+            );
+        } finally {
+            setisRefreshing(false);
+        }
+    };
+
+    // Item delete handler
+    const handleDeleteItem = (item: InventoryItem) => {
+        Alert.alert(
+            "Delete item?",
+            `Remove ${item.name} from your inventory?`,
+            [
+                {
+                    text: "Cancel",
+                    style: "cancel",
+                },
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            await api.delete(`/inventory/${item.id}`);
+
+                            removeInventoryItem(item.id);
+                        } catch (error) {
+                            console.error(
+                                "Failed to delete inventory item:",
+                                error,
+                            );
+
+                            Alert.alert(
+                                "Could not delete item",
+                                "Please try again.",
+                            );
+                        }
+                    },
+                },
+            ],
+        );
+    };
 
     const filteredItems = useMemo(() => {
         const normalizedSearch = search.trim().toLowerCase();
@@ -128,12 +192,44 @@ export default function InventoryScreen() {
 
     const renderInventoryItem = ({ item }: {
         item: InventoryItem;
-    }) => (
-        <InventoryItemCard
-            item={item}
-            onPress={handleInventoryItemPress}
-        />
-    );
+    }) => {
+        return (
+            <ReanimatedSwipeable
+                friction={2}
+                rightThreshold={40}
+                overshootRight={false}
+                renderRightActions={(_, __, swipeable) => (
+                    <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Delete ${item.name}`}
+                        style={({ pressed }) => [
+                            styles.deleteAction,
+                            pressed && styles.pressed,
+                        ]}
+                        onPress={() => {
+                            swipeable.close();
+                            handleDeleteItem(item);
+                        }}
+                    >
+                        <Ionicons
+                            name="trash-outline"
+                            size={theme.iconSizes.md}
+                            color={theme.colors.white}
+                        />
+
+                        <Text style={styles.deleteActionText}>
+                            Delete
+                        </Text>
+                    </Pressable>
+                )}
+            >
+                <InventoryItemCard
+                    item={item}
+                    onPress={handleInventoryItemPress}
+                />
+            </ReanimatedSwipeable>
+        );
+    };
 
     // Item press handler
     const handleInventoryItemPress = (item: InventoryItem) => {
@@ -170,6 +266,17 @@ export default function InventoryScreen() {
                 keyboardDismissMode="on-drag"
                 contentContainerStyle={
                     styles.contentContainer
+                }
+                refreshControl={
+                    <RefreshControl
+                        refreshing={isRefreshing}
+                        onRefresh={handleRefresh}
+                        tintColor={theme.colors.primary}
+                        colors={[theme.colors.primary]}
+                        progressBackgroundColor={
+                            theme.colors.surface
+                        }
+                    />
                 }
                 ListHeaderComponent={
                     <>
@@ -237,10 +344,7 @@ export default function InventoryScreen() {
                                 <Ionicons
                                     name="search-outline"
                                     size={theme.iconSizes.sm}
-                                    color={
-                                        theme.colors
-                                            .primaryDark
-                                    }
+                                    color={theme.colors.primaryDark}
                                 />
                             </View>
 
@@ -301,34 +405,20 @@ export default function InventoryScreen() {
                                         accessibilityState={{
                                             selected: isSelected,
                                         }}
-                                        onPress={() =>
-                                            setSelectedCategory(
-                                                item,
-                                            )
-                                        }
-                                        style={({
-                                            pressed,
-                                        }) => [
-                                                styles.categoryChip,
-                                                isSelected &&
-                                                styles.selectedCategoryChip,
-                                                pressed &&
-                                                styles.pressed,
-                                            ]}
+                                        onPress={() => setSelectedCategory(item)}
+                                        style={({ pressed }) => [
+                                            styles.categoryChip,
+                                            isSelected &&
+                                            styles.selectedCategoryChip,
+                                            pressed &&
+                                            styles.pressed,
+                                        ]}
                                     >
                                         {isSelected && (
                                             <Ionicons
                                                 name="checkmark-circle"
-                                                size={
-                                                    theme
-                                                        .iconSizes
-                                                        .sm
-                                                }
-                                                color={
-                                                    theme
-                                                        .colors
-                                                        .accent
-                                                }
+                                                size={theme.iconSizes.sm}
+                                                color={theme.colors.accent}
                                             />
                                         )}
 
@@ -723,5 +813,22 @@ const styles = StyleSheet.create({
     pressed: {
         opacity: theme.opacity.pressed,
         transform: [{ scale: 0.98 }],
+    },
+
+    deleteAction: {
+        width: 100,
+        alignItems: "center",
+        justifyContent: "center",
+        gap: theme.spacing.xs,
+        marginLeft: theme.spacing.sm,
+        backgroundColor: theme.colors.error,
+        borderRadius: theme.radii.xl,
+    },
+
+    deleteActionText: {
+        color: theme.colors.white,
+        fontSize: theme.fontSizes.sm,
+        lineHeight: theme.lineHeights.sm,
+        fontWeight: theme.fontWeights.bold,
     },
 });

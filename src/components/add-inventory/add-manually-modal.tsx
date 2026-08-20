@@ -40,15 +40,12 @@ import { SmartExpirationSuggestion } from "./modal/smart-expiration-suggestion";
 import { StorageSection } from "./modal/storage-section";
 import { SuccessState } from "./modal/success-state";
 import { CategoryID } from "@/types/inventory-item";
-import { StorageID } from "@/types/inventory-item";
-
-export type ExpirationOption =
-    | "today"
-    | "tomorrow"
-    | "3-days"
-    | "1-week"
-    | "2-weeks"
-    | "pick-date";
+import {
+    StorageID,
+    ExpirationOption,
+    EXPIRATION_OPTIONS,
+    CATEGORIES
+} from "@/types/inventory-item";
 
 export type FoodSuggestion = {
     name: string;
@@ -249,34 +246,6 @@ const FOOD_DATABASE: FoodSuggestion[] = [
         ],
     },
 ];
-
-export const CATEGORIES: {
-    id: CategoryID;
-    label: string;
-    emoji: string;
-}[] = [
-        { id: "produce", label: "Produce", emoji: "🥬" },
-        { id: "meat", label: "Meat", emoji: "🥩" },
-        { id: "dairy", label: "Dairy", emoji: "🥛" },
-        { id: "bakery", label: "Bakery", emoji: "🍞" },
-        { id: "pantry", label: "Pantry", emoji: "🥫" },
-        { id: "frozen", label: "Frozen", emoji: "🧊" },
-        { id: "drinks", label: "Drinks", emoji: "🥤" },
-        { id: "other", label: "Other", emoji: "🥡" },
-    ];
-
-export const EXPIRATION_OPTIONS: {
-    id: ExpirationOption;
-    label: string;
-    days: number | null;
-}[] = [
-        { id: "today", label: "Today", days: 0 },
-        { id: "tomorrow", label: "Tomorrow", days: 1 },
-        { id: "3-days", label: "3 Days", days: 3 },
-        { id: "1-week", label: "1 Week", days: 7 },
-        { id: "2-weeks", label: "2 Weeks", days: 14 },
-        { id: "pick-date", label: "Pick Date", days: null },
-    ];
 
 function getExpirationFromDays(days: number): ExpirationOption {
     if (days <= 0) return "today";

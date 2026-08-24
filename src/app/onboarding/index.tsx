@@ -7,13 +7,14 @@ import {
   TextInput,
   View
 } from "react-native";
-
+import { CreateUserPreferenceRequest, CreateUserPreferenceResponse } from "@/types/user-preference";
 import { Screen } from "@/components/ui/screen";
 import { theme } from "@/styles/theme";
 import { HeroFeature } from "../../components/onboarding/hero-feature";
 import { NotificationOption } from "../../components/onboarding/notification-option";
 import { OptionGrid } from "../../components/onboarding/option-grid";
 import { SetupCard } from "../../components/onboarding/setup-card";
+import api, { ApiError } from "@/hooks/api";
 
 type IconName = ComponentProps<typeof Ionicons>["name"];
 
@@ -53,13 +54,11 @@ export default function OnboardingScreen() {
   const [dietaryPreferences, setDietaryPreferences] = useState<string[]>([]);
   const [allergies, setAllergies] = useState<string[]>([]);
   const [preferredStores, setPreferredStores] = useState<string[]>([]);
-
   const [customAllergy, setCustomAllergy] = useState("");
-
-  const [expirationNotifications, setExpirationNotifications] =
-    useState(true);
-
+  const [expirationNotifications, setExpirationNotifications] = useState(true);
   const [lowStockNotifications, setLowStockNotifications] = useState(true);
+
+  const updatedAllergies = [...allergies, customAllergy];
 
   const toggleSelection = (
     value: string,
@@ -88,6 +87,38 @@ export default function OnboardingScreen() {
     setAllergies([...allergies, allergy]);
     setCustomAllergy("");
   };
+
+  // Save the preferance
+  const savePreferanceHandler = async () => {
+    const preferences: CreateUserPreferenceRequest = {
+      dietaryPreferences,
+      allergies,
+      preferredStores,
+      expirationNotifications,
+      lowStockNotifications,
+    };
+
+    try {
+      const response = await api.put<CreateUserPreferenceResponse>(
+        "/auth/me/preferences",
+        preferences,
+      );
+
+      console.log("Saved preferences:", response.preferences);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        console.error("Failed to save preferences:", {
+          status: error.status,
+          message: error.message,
+          data: error.data,
+        });
+      } else {
+        console.error("Unexpected error:", error);
+      }
+
+      throw error;
+    }
+  }
 
   return (
     <Screen
@@ -309,41 +340,15 @@ export default function OnboardingScreen() {
         />
       </SetupCard>
 
-      <View style={styles.localCard}>
-        <View style={styles.localIcon}>
-          <Ionicons
-            name="phone-portrait-outline"
-            size={theme.iconSizes.lg}
-            color={theme.colors.primaryDark}
-          />
-        </View>
-
-        <View style={styles.localContent}>
-          <Text style={styles.localTitle}>
-            Start without an account
-          </Text>
-
-          <Text style={styles.localDescription}>
-            Keep your data on this device and create an account
-            later when you want cloud syncing.
-          </Text>
-        </View>
-
-        <Ionicons
-          name="shield-checkmark-outline"
-          size={theme.iconSizes.md}
-          color={theme.colors.primary}
-        />
-      </View>
-
       <Pressable
         style={({ pressed }) => [
           styles.primaryButton,
           pressed && styles.primaryButtonPressed,
         ]}
+        onPress={savePreferanceHandler}
       >
         <Text style={styles.primaryButtonText}>
-          Continue locally
+          Save and continue
         </Text>
 
         <View style={styles.primaryButtonIcon}>
@@ -354,46 +359,6 @@ export default function OnboardingScreen() {
           />
         </View>
       </Pressable>
-
-      <View style={styles.dividerRow}>
-        <View style={styles.divider} />
-
-        <Text style={styles.dividerText}>
-          OR SAVE AND SYNC
-        </Text>
-
-        <View style={styles.divider} />
-      </View>
-
-      <Pressable
-        style={({ pressed }) => [
-          styles.accountButton,
-          pressed && styles.pressed,
-        ]}
-      >
-        <Ionicons
-          name="person-add-outline"
-          size={theme.iconSizes.md}
-          color={theme.colors.textInverse}
-        />
-
-        <Text style={styles.accountButtonText}>
-          Create an account
-        </Text>
-      </Pressable>
-
-      <Pressable style={styles.signInButton}>
-        <Text style={styles.signInPrompt}>
-          Already have an account?
-        </Text>
-
-        <Text style={styles.signInText}>Sign in</Text>
-      </Pressable>
-
-      <Text style={styles.privacyText}>
-        Your preferences remain on this device unless you create an
-        account.
-      </Text>
     </Screen>
   );
 }

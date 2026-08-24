@@ -9,6 +9,7 @@ export type VerifiedGoogleUser = {
     role: string;
     isActive: boolean;
     measurementSystem: string;
+    preferenceId: string | null;
     createdAt: string;
     timezone: string;
 };

@@ -181,21 +181,20 @@ export default function AddInventoryScreen() {
         item: ManualKitchenItem,
     ): Promise<void> => {
         try {
-            const response =
-                await api.post<CreateInventoryItemResponse>(
-                    "/inventory",
-                    {
-                        name: item.name,
-                        emoji: item.emoji,
-                        quantity: item.quantity,
-                        unit: item.unit,
-                        category: item.category,
-                        storage: item.storage,
-                        expirationDate:
-                            item.expirationDate?.toISOString() ?? null,
-                        notes: item.notes.trim() || null,
-                    },
-                );
+            const response = await api.post<CreateInventoryItemResponse>(
+                "/inventory",
+                {
+                    name: item.name,
+                    emoji: item.emoji,
+                    quantity: item.quantity,
+                    unit: item.unit,
+                    category: item.category,
+                    storage: item.storage,
+                    expirationDate:
+                        item.expirationDate?.toISOString() ?? null,
+                    notes: item.notes.trim() || null,
+                },
+            );
 
             // Add the single created item to Zustand.
             addItem(response.item);

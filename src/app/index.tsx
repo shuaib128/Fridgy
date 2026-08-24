@@ -5,14 +5,13 @@ import { ActivityIndicator, Alert, View } from "react-native";
 import { getCurrentUser } from "@/auth/current-user";
 import { useUserStore } from "@/stores/auth-store";
 
-const hasCompletedOnboarding = true;
-
 export default function IndexScreen() {
   const user = useUserStore((state) => state.user);
   const setUser = useUserStore((state) => state.setUser);
   const clearUser = useUserStore((state) => state.clearUser);
 
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [hasSetPreferance, sethasSetPreferance] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -27,6 +26,7 @@ export default function IndexScreen() {
 
         if (currentUser) {
           setUser(currentUser);
+          sethasSetPreferance(currentUser.preferenceId !== null);
         } else {
           clearUser();
         }
@@ -73,7 +73,7 @@ export default function IndexScreen() {
     return <Redirect href="/login" />;
   }
 
-  if (!hasCompletedOnboarding) {
+  if (!hasSetPreferance) {
     return <Redirect href="/onboarding" />;
   }
 

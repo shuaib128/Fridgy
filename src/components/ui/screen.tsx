@@ -1,3 +1,4 @@
+import { theme } from "@/styles/theme";
 import {
     forwardRef,
     type PropsWithChildren,
@@ -99,6 +100,11 @@ export const Screen = forwardRef<ScrollView, ScreenProps>(
                         <RefreshControl
                             refreshing={refreshing}
                             onRefresh={onRefresh}
+                            tintColor={theme.colors.primary}
+                            colors={[theme.colors.primary]}
+                            progressBackgroundColor={
+                                theme.colors.surface
+                            }
                         />
                     ) : undefined
                 }

@@ -5,6 +5,7 @@ export type UserPreference = {
     preferredStores: string[];
     expirationNotifications: boolean;
     lowStockNotifications: boolean;
+    mealSuggestionNotifications: boolean;
     createdAt: string;
     updatedAt: string;
 };
@@ -17,4 +18,8 @@ export type CreateUserPreferenceRequest = Omit<
 export type CreateUserPreferenceResponse = {
     message: string;
     preferences: UserPreference;
+};
+
+export type GetUserPreferenceResponse = {
+  preferences: UserPreference;
 };

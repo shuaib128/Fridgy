@@ -26,7 +26,7 @@ export async function getCurrentUser(): Promise<VerifiedGoogleUser | null> {
     try {
         const response =
             await api.get<CurrentUserResponse>(
-                "/auth/me",
+                "/users/me",
             );
 
         return response.user;

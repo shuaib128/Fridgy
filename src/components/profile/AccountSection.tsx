@@ -15,9 +15,7 @@ type AccountSectionProps<T extends AccountItem> = {
     renderMenuItem: (item: T) => ReactNode;
 };
 
-export default function AccountSection<
-    T extends AccountItem,
->({
+export default function AccountSection<T extends AccountItem>({
     items,
     renderMenuItem,
 }: AccountSectionProps<T>) {

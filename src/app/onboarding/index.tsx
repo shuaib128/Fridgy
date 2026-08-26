@@ -1,13 +1,20 @@
+import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useState, type ComponentProps } from "react";
+import { useCallback, useEffect, useState, type ComponentProps } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
   View
 } from "react-native";
-import { CreateUserPreferenceRequest, CreateUserPreferenceResponse } from "@/types/user-preference";
+import {
+  CreateUserPreferenceRequest,
+  CreateUserPreferenceResponse,
+  GetUserPreferenceResponse
+} from "@/types/user-preference";
 import { Screen } from "@/components/ui/screen";
 import { theme } from "@/styles/theme";
 import { HeroFeature } from "../../components/onboarding/hero-feature";
@@ -57,8 +64,19 @@ export default function OnboardingScreen() {
   const [customAllergy, setCustomAllergy] = useState("");
   const [expirationNotifications, setExpirationNotifications] = useState(true);
   const [lowStockNotifications, setLowStockNotifications] = useState(true);
+  const [mealSuggestionNotifications, setMealSuggestionNotifications] = useState(true);
 
-  const updatedAllergies = [...allergies, customAllergy];
+  const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Handle the skip btn
+  function handleSkip() {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/profile");
+    }
+  }
 
   const toggleSelection = (
     value: string,
@@ -90,21 +108,33 @@ export default function OnboardingScreen() {
 
   // Save the preferance
   const savePreferanceHandler = async () => {
+    setIsLoading(true);
+
     const preferences: CreateUserPreferenceRequest = {
       dietaryPreferences,
       allergies,
       preferredStores,
       expirationNotifications,
       lowStockNotifications,
+      mealSuggestionNotifications
     };
 
     try {
       const response = await api.put<CreateUserPreferenceResponse>(
-        "/auth/me/preferences",
+        "/users/me/preferences",
         preferences,
       );
 
-      console.log("Saved preferences:", response.preferences);
+      Alert.alert(
+        "Preferences saved",
+        "Your preferences have been updated.",
+        [
+          {
+            text: "Continue",
+            onPress: () => router.back(),
+          },
+        ],
+      );
     } catch (error) {
       if (error instanceof ApiError) {
         console.error("Failed to save preferences:", {
@@ -112,23 +142,84 @@ export default function OnboardingScreen() {
           message: error.message,
           data: error.data,
         });
+
+        setIsLoading(false);
       } else {
         console.error("Unexpected error:", error);
+        setIsLoading(false);
       }
 
       throw error;
     }
+
+    setIsLoading(false);
   }
+
+  // Handle refresh
+  const handleRefresh = useCallback(async (): Promise<void> => {
+    setIsRefreshing(true);
+
+    try {
+      const response = await api.get<GetUserPreferenceResponse>(
+        "/users/me/preferences",
+      );
+
+      const preferences = response.preferences;
+
+      setDietaryPreferences(
+        preferences.dietaryPreferences ?? [],
+      );
+
+      setAllergies(
+        preferences.allergies ?? [],
+      );
+
+      setPreferredStores(
+        preferences.preferredStores ?? [],
+      );
+
+      setExpirationNotifications(
+        preferences.expirationNotifications,
+      );
+
+      setLowStockNotifications(
+        preferences.lowStockNotifications,
+      );
+
+      setMealSuggestionNotifications(
+        preferences.mealSuggestionNotifications,
+      );
+    } catch (error) {
+      if (error instanceof ApiError) {
+        console.error("Failed to refresh preferences:", {
+          status: error.status,
+          message: error.message,
+          data: error.data,
+        });
+      } else {
+        console.error("Unexpected refresh error:", error);
+      }
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void handleRefresh();
+  }, [handleRefresh]);
 
   return (
     <Screen
       scrollable
+      refreshing={isRefreshing}
+      onRefresh={handleRefresh}
       padded={false}
       backgroundColor={theme.colors.backgroundMuted}
       contentContainerStyle={styles.scrollContent}
       scrollViewProps={{
         showsVerticalScrollIndicator: false,
       }}
+
     >
       <View style={styles.brandRow}>
         <View style={styles.smallLogo}>
@@ -141,7 +232,7 @@ export default function OnboardingScreen() {
 
         <Text style={styles.brandName}>Fridgy</Text>
 
-        <Pressable style={styles.skipButton}>
+        <Pressable onPress={handleSkip} style={styles.skipButton}>
           <Text style={styles.skipText}>Skip</Text>
         </Pressable>
       </View>
@@ -338,26 +429,51 @@ export default function OnboardingScreen() {
           enabled={lowStockNotifications}
           onChange={setLowStockNotifications}
         />
+
+        <NotificationOption
+          icon="bulb-outline"
+          title="Meal suggestions"
+          description="Receive ideas based on your inventory."
+          enabled={mealSuggestionNotifications}
+          onChange={setMealSuggestionNotifications}
+        />
       </SetupCard>
 
       <Pressable
+        disabled={isLoading}
+        onPress={savePreferanceHandler}
         style={({ pressed }) => [
           styles.primaryButton,
-          pressed && styles.primaryButtonPressed,
+          pressed && !isLoading && styles.primaryButtonPressed,
+          isLoading && styles.primaryButtonDisabled,
         ]}
-        onPress={savePreferanceHandler}
       >
-        <Text style={styles.primaryButtonText}>
-          Save and continue
-        </Text>
+        {isLoading ? (
+          <>
+            <Text style={styles.primaryButtonText}>
+              Saving...
+            </Text>
 
-        <View style={styles.primaryButtonIcon}>
-          <Ionicons
-            name="arrow-forward"
-            size={theme.iconSizes.sm}
-            color={theme.colors.text}
-          />
-        </View>
+            <ActivityIndicator
+              size="small"
+              color={theme.colors.text}
+            />
+          </>
+        ) : (
+          <>
+            <Text style={styles.primaryButtonText}>
+              Save and continue
+            </Text>
+
+            <View style={styles.primaryButtonIcon}>
+              <Ionicons
+                name="arrow-forward"
+                size={theme.iconSizes.sm}
+                color={theme.colors.text}
+              />
+            </View>
+          </>
+        )}
       </Pressable>
     </Screen>
   );
@@ -587,6 +703,10 @@ const styles = StyleSheet.create({
   primaryButtonPressed: {
     backgroundColor: theme.colors.accentDark,
     transform: [{ scale: 0.98 }],
+  },
+
+  primaryButtonDisabled: {
+    opacity: 0.6,
   },
 
   primaryButtonText: {

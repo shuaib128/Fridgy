@@ -23,22 +23,11 @@ type MenuItem = {
     title: string;
     description: string;
     icon: keyof typeof Ionicons.glyphMap;
-    iconBackground:
-    | "primary"
-    | "accent"
-    | "soft"
-    | "muted";
+    iconBackground: | "primary" | "accent" | "soft" | "muted";
+    onPress: () => void;
 };
 
 const ACCOUNT_ITEMS: MenuItem[] = [
-    {
-        id: "personal-information",
-        title: "Personal information",
-        description:
-            "Update your name, photo, and account details.",
-        icon: "person-outline",
-        iconBackground: "accent",
-    },
     {
         id: "household",
         title: "Household",
@@ -46,6 +35,7 @@ const ACCOUNT_ITEMS: MenuItem[] = [
             "Manage who shares your kitchen inventory.",
         icon: "people-outline",
         iconBackground: "soft",
+        onPress: () => router.push("/onboarding"),
     },
     {
         id: "dietary-preferences",
@@ -54,6 +44,7 @@ const ACCOUNT_ITEMS: MenuItem[] = [
             "Adjust meal suggestions and food preferences.",
         icon: "nutrition-outline",
         iconBackground: "primary",
+        onPress: () => router.push("/onboarding"),
     },
 ];
 
@@ -65,6 +56,7 @@ const APP_ITEMS: MenuItem[] = [
             "Control expiry and low-stock reminders.",
         icon: "notifications-outline",
         iconBackground: "accent",
+        onPress: () => router.push("/onboarding"),
     },
     {
         id: "appearance",
@@ -73,6 +65,7 @@ const APP_ITEMS: MenuItem[] = [
             "Manage how Fridgy looks on your device.",
         icon: "color-palette-outline",
         iconBackground: "soft",
+        onPress: () => router.push("/onboarding"),
     },
     {
         id: "privacy",
@@ -81,6 +74,7 @@ const APP_ITEMS: MenuItem[] = [
             "Review privacy settings and account security.",
         icon: "shield-checkmark-outline",
         iconBackground: "primary",
+        onPress: () => router.push("/onboarding"),
     },
 ];
 
@@ -107,10 +101,9 @@ export default function ProfileScreen() {
         }
     };
 
+    // Render the items in the Flatlist
     const renderMenuItem = (item: MenuItem) => {
-        const usesInverseIcon =
-            item.iconBackground === "primary";
-
+        const usesInverseIcon = item.iconBackground === "primary";
 
         return (
             <Pressable
@@ -121,6 +114,7 @@ export default function ProfileScreen() {
                     styles.menuItem,
                     pressed && styles.pressed,
                 ]}
+                onPress={item.onPress}
             >
                 <View
                     style={[
@@ -133,11 +127,7 @@ export default function ProfileScreen() {
                     <Ionicons
                         name={item.icon}
                         size={theme.iconSizes.md}
-                        color={
-                            usesInverseIcon
-                                ? theme.colors.textInverse
-                                : theme.colors.primaryDark
-                        }
+                        color={usesInverseIcon ? theme.colors.textInverse : theme.colors.primaryDark}
                     />
                 </View>
 

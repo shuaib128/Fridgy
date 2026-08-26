@@ -12,8 +12,7 @@ import {
 } from "react-native";
 import {
   CreateUserPreferenceRequest,
-  CreateUserPreferenceResponse,
-  GetUserPreferenceResponse
+  CreateUserPreferenceResponse
 } from "@/types/user-preference";
 import { Screen } from "@/components/ui/screen";
 import { theme } from "@/styles/theme";
@@ -22,6 +21,8 @@ import { NotificationOption } from "../../components/onboarding/notification-opt
 import { OptionGrid } from "../../components/onboarding/option-grid";
 import { SetupCard } from "../../components/onboarding/setup-card";
 import api, { ApiError } from "@/hooks/api";
+import { getUserPreferences } from "@/components/onboarding/get-user-preferance";
+import { useUserPreferenceStore } from "@/stores/user-preference-store";
 
 type IconName = ComponentProps<typeof Ionicons>["name"];
 
@@ -58,6 +59,9 @@ const storeOptions: Option[] = [
 ];
 
 export default function OnboardingScreen() {
+  const storedPreferences = useUserPreferenceStore((state) => state.preference);
+  const hasLoadedPreferences = useUserPreferenceStore((state) => state.hasLoaded);
+  const setStoredPreferences = useUserPreferenceStore((state) => state.setPreference);
   const [dietaryPreferences, setDietaryPreferences] = useState<string[]>([]);
   const [allergies, setAllergies] = useState<string[]>([]);
   const [preferredStores, setPreferredStores] = useState<string[]>([]);
@@ -68,6 +72,15 @@ export default function OnboardingScreen() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const applyPreferencesToForm = useCallback((preferences: CreateUserPreferenceResponse["preferences"]) => {
+    setDietaryPreferences(preferences.dietaryPreferences ?? []);
+    setAllergies(preferences.allergies ?? []);
+    setPreferredStores(preferences.preferredStores ?? []);
+    setExpirationNotifications(preferences.expirationNotifications);
+    setLowStockNotifications(preferences.lowStockNotifications);
+    setMealSuggestionNotifications(preferences.mealSuggestionNotifications);
+  }, []);
 
   // Handle the skip btn
   function handleSkip() {
@@ -125,6 +138,10 @@ export default function OnboardingScreen() {
         preferences,
       );
 
+      // Keep the newly saved preference available to every screen.
+      setStoredPreferences(response.preferences);
+      applyPreferencesToForm(response.preferences);
+
       Alert.alert(
         "Preferences saved",
         "Your preferences have been updated.",
@@ -143,52 +160,27 @@ export default function OnboardingScreen() {
           data: error.data,
         });
 
-        setIsLoading(false);
       } else {
         console.error("Unexpected error:", error);
-        setIsLoading(false);
       }
-
-      throw error;
+      Alert.alert("Could not save preferences", "Please try again.");
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    setIsLoading(false);
-  }
+  const loadPreferences = useCallback(async () => {
+    const preferences = await getUserPreferences();
+    setStoredPreferences(preferences);
+    applyPreferencesToForm(preferences);
+  }, [applyPreferencesToForm, setStoredPreferences]);
 
   // Handle refresh
-  const handleRefresh = useCallback(async (): Promise<void> => {
+  const handleRefresh = async () => {
     setIsRefreshing(true);
 
     try {
-      const response = await api.get<GetUserPreferenceResponse>(
-        "/users/me/preferences",
-      );
-
-      const preferences = response.preferences;
-
-      setDietaryPreferences(
-        preferences.dietaryPreferences ?? [],
-      );
-
-      setAllergies(
-        preferences.allergies ?? [],
-      );
-
-      setPreferredStores(
-        preferences.preferredStores ?? [],
-      );
-
-      setExpirationNotifications(
-        preferences.expirationNotifications,
-      );
-
-      setLowStockNotifications(
-        preferences.lowStockNotifications,
-      );
-
-      setMealSuggestionNotifications(
-        preferences.mealSuggestionNotifications,
-      );
+      await loadPreferences();
     } catch (error) {
       if (error instanceof ApiError) {
         console.error("Failed to refresh preferences:", {
@@ -202,11 +194,24 @@ export default function OnboardingScreen() {
     } finally {
       setIsRefreshing(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
-    void handleRefresh();
-  }, [handleRefresh]);
+    // Returning to this screen uses Zustand instead of requesting again.
+    if (hasLoadedPreferences && storedPreferences) {
+      applyPreferencesToForm(storedPreferences);
+      return;
+    }
+
+    loadPreferences().catch((error) => {
+      console.error("Failed to load preferences:", error);
+    });
+  }, [
+    applyPreferencesToForm,
+    hasLoadedPreferences,
+    loadPreferences,
+    storedPreferences,
+  ]);
 
   return (
     <Screen

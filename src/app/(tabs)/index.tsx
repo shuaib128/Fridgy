@@ -1,5 +1,4 @@
 import { StyleSheet } from "react-native";
-
 import { AttentionCard } from "@/components/home/attention-card";
 import { DailyFridgeInsight, FridgeStatusCard } from "@/components/home/fridge-status-card";
 import KitchenOverviewCard from "@/components/home/kitchen-overview-card";
@@ -21,6 +20,7 @@ import {
 } from "@/styles/theme";
 import { router } from "expo-router";
 import { PageHeader } from "../../components/navigation/screen-header";
+import { useState } from "react";
 
 // Greeting function for the home screen
 function getGreeting() {
@@ -153,15 +153,29 @@ const weeklyProduceUsage = [
 ];
 
 export default function HomeScreen() {
+    const [isRefreshing, setIsRefreshing] = useState(false);
+
+    // Controll the refresh control
+    const handleRefresh = () => {
+        setIsRefreshing(true);
+
+        setTimeout(() => {
+            console.log("Executed after 2 seconds");
+            setIsRefreshing(false);
+        }, 3000);
+    };
+
     return (
         <Screen
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
             scrollable
             padded={false}
             backgroundColor={colors.background}
             contentContainerStyle={styles.content}
         >
             <ChefTipModal />
-            
+
             <PageHeader
                 eyebrow={getGreeting().toUpperCase()}
                 title="Hello, Shuaib 👋"

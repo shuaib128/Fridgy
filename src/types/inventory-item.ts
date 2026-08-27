@@ -37,11 +37,8 @@ export const EXPIRATION_OPTIONS: {
         { id: "pick-date", label: "Pick Date", days: null },
     ];
 
-export const CATEGORIES: {
-    id: CategoryID;
-    label: string;
-    emoji: string;
-}[] = [
+export const CATEGORIES: { id: CategoryID; label: string; emoji: string }[] =
+    [
         { id: "produce", label: "Produce", emoji: "🥬" },
         { id: "meat", label: "Meat", emoji: "🥩" },
         { id: "dairy", label: "Dairy", emoji: "🥛" },

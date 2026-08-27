@@ -1,38 +1,51 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     Alert,
+    Image,
+    Linking,
     Pressable,
     StyleSheet,
     Text,
     View,
-    Image
 } from "react-native";
-import { useUserStore } from "@/stores/auth-store";
-import { logout } from "@/auth/logout";
-import { Screen } from "@/components/ui/screen";
-import { theme } from "@/styles/theme";
 import { router } from "expo-router";
+import { useUserStore } from "@/stores/auth-store";
+import { useInventoryStore } from "@/stores/inventory-store";
+import { useUserPreferenceStore } from "@/stores/user-preference-store";
+import { logout } from "@/auth/logout";
+import api, { ApiError } from "@/hooks/api";
+import {
+    CreateUserPreferenceRequest,
+    CreateUserPreferenceResponse,
+} from "@/types/user-preference";
+import { getUserPreferences } from "@/components/onboarding/get-user-preferance";
+import { Screen } from "@/components/ui/screen";
 import { PageHeader } from "../../components/navigation/screen-header";
 import AccountSection from "@/components/profile/AccountSection";
 import SmartRemindersSection from "@/components/profile/SmartRemindersSection";
 import AppSettingsSection from "@/components/profile/AppSettingsSection";
+import { theme } from "@/styles/theme";
 
 type MenuItem = {
     id: string;
     title: string;
     description: string;
     icon: keyof typeof Ionicons.glyphMap;
-    iconBackground: | "primary" | "accent" | "soft" | "muted";
+    iconBackground: "primary" | "accent" | "soft" | "muted";
     onPress: () => void;
 };
+
+type ReminderPreferenceKey =
+    | "expirationNotifications"
+    | "lowStockNotifications"
+    | "mealSuggestionNotifications";
 
 const ACCOUNT_ITEMS: MenuItem[] = [
     {
         id: "household",
         title: "Household",
-        description:
-            "Manage who shares your kitchen inventory.",
+        description: "Manage who shares your kitchen inventory.",
         icon: "people-outline",
         iconBackground: "soft",
         onPress: () => router.push("/onboarding"),
@@ -40,8 +53,7 @@ const ACCOUNT_ITEMS: MenuItem[] = [
     {
         id: "dietary-preferences",
         title: "Dietary preferences",
-        description:
-            "Adjust meal suggestions and food preferences.",
+        description: "Adjust meal suggestions and food preferences.",
         icon: "nutrition-outline",
         iconBackground: "primary",
         onPress: () => router.push("/onboarding"),
@@ -50,58 +62,162 @@ const ACCOUNT_ITEMS: MenuItem[] = [
 
 const APP_ITEMS: MenuItem[] = [
     {
-        id: "notifications",
-        title: "Notifications",
-        description:
-            "Control expiry and low-stock reminders.",
-        icon: "notifications-outline",
-        iconBackground: "accent",
-        onPress: () => router.push("/onboarding"),
-    },
-    {
         id: "appearance",
         title: "Appearance",
-        description:
-            "Manage how Fridgy looks on your device.",
+        description: "Manage how Fridgy looks on your device.",
         icon: "color-palette-outline",
         iconBackground: "soft",
-        onPress: () => router.push("/onboarding"),
+        onPress: () => router.push("/appearance-preview"),
     },
     {
         id: "privacy",
         title: "Privacy and security",
-        description:
-            "Review privacy settings and account security.",
+        description: "Review privacy settings and account security.",
         icon: "shield-checkmark-outline",
         iconBackground: "primary",
-        onPress: () => router.push("/onboarding"),
+        onPress: () => Linking.openURL("https://www.tesla.com/support"),
     },
 ];
 
 export default function ProfileScreen() {
     const user = useUserStore((state) => state.user);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
-    const [expiryReminders, setExpiryReminders] = useState(true);
-    const [lowStockReminders, setLowStockReminders] = useState(true);
-    const [mealSuggestions, setMealSuggestions] = useState(false);
+    const itemsQuantity = useInventoryStore(
+        (state) => state.items.length,
+    );
+
+    const storedPreferences = useUserPreferenceStore(
+        (state) => state.preference,
+    );
+
+    const hasLoadedPreferences = useUserPreferenceStore(
+        (state) => state.hasLoaded,
+    );
+
+    const setStoredPreferences = useUserPreferenceStore(
+        (state) => state.setPreference,
+    );
+
+    /*
+     * Load the preferences if another screen has not already
+     * loaded them into Zustand.
+     */
+    useEffect(() => {
+        if (hasLoadedPreferences) {
+            return;
+        }
+
+        async function loadPreferences() {
+            try {
+                const preferences = await getUserPreferences();
+                setStoredPreferences(preferences);
+            } catch (error) {
+                console.error("Failed to load user preferences:", error);
+            }
+        }
+
+        loadPreferences();
+    }, [
+        hasLoadedPreferences,
+        setStoredPreferences,
+    ]);
+
+    /*
+     * Changes the Zustand value immediately and then saves
+     * the complete preferences object to the backend.
+     */
+    async function updateReminder(
+        field: ReminderPreferenceKey,
+        value: boolean,
+    ) {
+        if (!storedPreferences) { return; }
+
+        const previousPreferences = storedPreferences;
+
+        const updatedPreferences = {
+            ...storedPreferences,
+            [field]: value,
+        };
+
+        // Update the switches immediately.
+        setStoredPreferences(updatedPreferences);
+
+        const request: CreateUserPreferenceRequest = {
+            dietaryPreferences: updatedPreferences.dietaryPreferences,
+            allergies: updatedPreferences.allergies,
+            preferredStores: updatedPreferences.preferredStores,
+            expirationNotifications: updatedPreferences.expirationNotifications,
+            lowStockNotifications: updatedPreferences.lowStockNotifications,
+            mealSuggestionNotifications: updatedPreferences.mealSuggestionNotifications,
+        };
+
+        try {
+            const response = await api.put<CreateUserPreferenceResponse>(
+                "/users/me/preferences",
+                request,
+            );
+
+            // Replace local data with the backend response.
+            setStoredPreferences(response.preferences);
+        } catch (error) {
+            // Restore the value if saving failed.
+            setStoredPreferences(previousPreferences);
+
+            if (error instanceof ApiError) {
+                console.error(
+                    "Failed to update reminder preference:",
+                    {
+                        status: error.status,
+                        message: error.message,
+                        data: error.data,
+                    },
+                );
+            } else {
+                console.error("Unexpected preference update error:", error);
+            }
+
+            Alert.alert(
+                "Update failed",
+                "Could not update your reminder preference.",
+            );
+        }
+    }
+
+    const expiryReminders = storedPreferences?.expirationNotifications ?? false;
+    const lowStockReminders = storedPreferences?.lowStockNotifications ?? false;
+    const mealSuggestions = storedPreferences?.mealSuggestionNotifications ?? false;
+
+    function setExpiryReminders(value: boolean) {
+        void updateReminder(
+            "expirationNotifications",
+            value,
+        );
+    }
+
+    function setLowStockReminders(value: boolean) {
+        void updateReminder(
+            "lowStockNotifications",
+            value,
+        );
+    }
+
+    function setMealSuggestions(value: boolean) {
+        void updateReminder(
+            "mealSuggestionNotifications",
+            value,
+        );
+    }
 
     const getIconBackground = (background: MenuItem["iconBackground"]) => {
         switch (background) {
-            case "primary":
-                return styles.primaryIconBackground;
-
-            case "accent":
-                return styles.accentIconBackground;
-
-            case "muted":
-                return styles.mutedIconBackground;
-
-            default:
-                return styles.softIconBackground;
+            case "primary": return styles.primaryIconBackground;
+            case "accent": return styles.accentIconBackground;
+            case "muted": return styles.mutedIconBackground;
+            default: return styles.softIconBackground;
         }
     };
 
-    // Render the items in the Flatlist
     const renderMenuItem = (item: MenuItem) => {
         const usesInverseIcon = item.iconBackground === "primary";
 
@@ -119,15 +235,17 @@ export default function ProfileScreen() {
                 <View
                     style={[
                         styles.menuIcon,
-                        getIconBackground(
-                            item.iconBackground,
-                        ),
+                        getIconBackground(item.iconBackground)
                     ]}
                 >
                     <Ionicons
                         name={item.icon}
                         size={theme.iconSizes.md}
-                        color={usesInverseIcon ? theme.colors.textInverse : theme.colors.primaryDark}
+                        color={
+                            usesInverseIcon
+                                ? theme.colors.textInverse
+                                : theme.colors.primaryDark
+                        }
                     />
                 </View>
 
@@ -147,14 +265,15 @@ export default function ProfileScreen() {
                     <Ionicons
                         name="chevron-forward"
                         size={theme.iconSizes.sm}
-                        color={theme.colors.primaryDark}
+                        color={
+                            theme.colors.primaryDark
+                        }
                     />
                 </View>
             </Pressable>
         );
     };
 
-    // Handle logout
     async function handleLogout() {
         try {
             await logout();
@@ -187,14 +306,25 @@ export default function ProfileScreen() {
         );
     }
 
+
+    // Controll the refresh control
+    const handleRefresh = () => {
+        setIsRefreshing(true);
+
+        setTimeout(() => {
+            console.log("Executed after 2 seconds");
+            setIsRefreshing(false);
+        }, 3000);
+    };
+
     return (
         <Screen
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
             scrollable
             padded={false}
             backgroundColor={theme.colors.background}
-            contentContainerStyle={
-                styles.contentContainer
-            }
+            contentContainerStyle={styles.contentContainer}
         >
             <PageHeader
                 eyebrow="YOUR FRIDGY"
@@ -202,8 +332,7 @@ export default function ProfileScreen() {
                 description="Manage your account, household, and app preferences."
                 icon="settings-outline"
                 accessibilityLabel="Open profile settings"
-                onPress={() => {
-                }}
+                onPress={() => { }}
             />
 
             <View style={styles.profileCard}>
@@ -216,11 +345,10 @@ export default function ProfileScreen() {
                                 resizeMode="cover"
                             />
                         ) : (
-                            <Text style={styles.avatarText}>
-                                {user?.name
-                                    ?.trim()
-                                    .slice(0, 2)
-                                    .toUpperCase() || "??"}
+                            <Text
+                                style={styles.avatarText}
+                            >
+                                {user?.name?.trim().slice(0, 2).toUpperCase() || "??"}
                             </Text>
                         )}
                     </View>
@@ -230,61 +358,49 @@ export default function ProfileScreen() {
                         accessibilityLabel="Change profile picture"
                         style={({ pressed }) => [
                             styles.editAvatarButton,
-                            pressed && styles.pressed,
+                            pressed &&
+                            styles.pressed,
                         ]}
                     >
                         <Ionicons
                             name="camera"
                             size={theme.iconSizes.sm}
-                            color={
-                                theme.colors.primaryDark
-                            }
+                            color={theme.colors.primaryDark}
                         />
                     </Pressable>
                 </View>
 
-                <View style={styles.profileContent}>
-                    <Text style={styles.profileName}>
+                <View
+                    style={styles.profileContent}
+                >
+                    <Text
+                        style={styles.profileName}
+                    >
                         {user?.name}
                     </Text>
 
-                    <Text style={styles.profileEmail}>
+                    <Text
+                        style={styles.profileEmail}
+                    >
                         {user?.email}
                     </Text>
 
-                    <View style={styles.profileBadge}>
+                    <View
+                        style={styles.profileBadge}
+                    >
                         <Ionicons
                             name="home"
                             size={theme.iconSizes.xs}
-                            color={
-                                theme.colors.primaryDark
-                            }
+                            color={theme.colors.primaryDark}
                         />
 
                         <Text
-                            style={
-                                styles.profileBadgeText
-                            }
+                            style={styles.profileBadgeText}
                         >
                             My kitchen
                         </Text>
                     </View>
                 </View>
-
-                <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Edit profile"
-                    style={({ pressed }) => [
-                        styles.editProfileButton,
-                        pressed && styles.pressed,
-                    ]}
-                >
-                    <Ionicons
-                        name="pencil-outline"
-                        size={theme.iconSizes.sm}
-                        color={theme.colors.textInverse}
-                    />
-                </Pressable>
             </View>
 
             <View style={styles.statsCard}>
@@ -298,22 +414,26 @@ export default function ProfileScreen() {
                         <Ionicons
                             name="cube-outline"
                             size={theme.iconSizes.md}
-                            color={
-                                theme.colors.primaryDark
-                            }
+                            color={theme.colors.primaryDark}
                         />
                     </View>
 
-                    <Text style={styles.statValue}>
-                        24
+                    <Text
+                        style={styles.statValue}
+                    >
+                        {itemsQuantity}
                     </Text>
 
-                    <Text style={styles.statLabel}>
-                        Food items
+                    <Text
+                        style={styles.statLabel}
+                    >
+                        {itemsQuantity === 1 ? "Food item" : "Food items"}
                     </Text>
                 </View>
 
-                <View style={styles.statDivider} />
+                <View
+                    style={styles.statDivider}
+                />
 
                 <View style={styles.statItem}>
                     <View
@@ -325,22 +445,26 @@ export default function ProfileScreen() {
                         <Ionicons
                             name="restaurant-outline"
                             size={theme.iconSizes.md}
-                            color={
-                                theme.colors.primaryDark
-                            }
+                            color={theme.colors.primaryDark}
                         />
                     </View>
 
-                    <Text style={styles.statValue}>
+                    <Text
+                        style={styles.statValue}
+                    >
                         12
                     </Text>
 
-                    <Text style={styles.statLabel}>
+                    <Text
+                        style={styles.statLabel}
+                    >
                         Saved meals
                     </Text>
                 </View>
 
-                <View style={styles.statDivider} />
+                <View
+                    style={styles.statDivider}
+                />
 
                 <View style={styles.statItem}>
                     <View
@@ -352,17 +476,19 @@ export default function ProfileScreen() {
                         <Ionicons
                             name="leaf-outline"
                             size={theme.iconSizes.md}
-                            color={
-                                theme.colors.textInverse
-                            }
+                            color={theme.colors.textInverse}
                         />
                     </View>
 
-                    <Text style={styles.statValue}>
+                    <Text
+                        style={styles.statValue}
+                    >
                         8
                     </Text>
 
-                    <Text style={styles.statLabel}>
+                    <Text
+                        style={styles.statLabel}
+                    >
                         Foods saved
                     </Text>
                 </View>
@@ -396,16 +522,22 @@ export default function ProfileScreen() {
                     />
                 </View>
 
-                <View style={styles.supportContent}>
-                    <Text style={styles.supportTitle}>
+                <View
+                    style={styles.supportContent}
+                >
+                    <Text
+                        style={styles.supportTitle}
+                    >
                         Need help?
                     </Text>
 
                     <Text
-                        style={styles.supportDescription}
+                        style={
+                            styles.supportDescription
+                        }
                     >
-                        Find answers or contact Fridgy
-                        support.
+                        Find answers or contact
+                        Fridgy support.
                     </Text>
                 </View>
 
@@ -440,7 +572,9 @@ export default function ProfileScreen() {
                     color={theme.colors.error}
                 />
 
-                <Text style={styles.signOutText}>
+                <Text
+                    style={styles.signOutText}
+                >
                     Sign out
                 </Text>
             </Pressable>
@@ -554,16 +688,6 @@ const styles = StyleSheet.create({
         fontSize: theme.fontSizes.xs,
         lineHeight: theme.lineHeights.xs,
         fontWeight: theme.fontWeights.bold,
-    },
-
-    editProfileButton: {
-        width: 40,
-        height: 40,
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: theme.colors.primaryDark,
-        borderRadius: theme.radii.full,
-        ...theme.shadows.small,
     },
 
     statsCard: {

@@ -18,6 +18,61 @@ type SmartRemindersSectionProps = {
     setMealSuggestions: (value: boolean) => void;
 };
 
+// Remonder option render
+const RenderReminderOption = ({
+    reminderValue,
+    setReminderValue,
+    icon,
+    reminderTitle,
+    reminderDes
+}: {
+    reminderValue: boolean;
+    setReminderValue: (value: boolean) => void;
+    icon: keyof typeof Ionicons.glyphMap;
+    reminderTitle: string;
+    reminderDes: string;
+}) => {
+    return (
+        <View style={styles.reminderRow}>
+            <View
+                style={[
+                    styles.menuIcon,
+                    styles.accentIconBackground,
+                ]}
+            >
+                <Ionicons
+                    name={icon}
+                    size={theme.iconSizes.md}
+                    color={theme.colors.primaryDark}
+                />
+            </View>
+
+            <View style={styles.reminderContent}>
+                <Text style={styles.reminderTitle}>
+                    {reminderTitle}
+                </Text>
+
+                <Text
+                    style={styles.reminderDescription}
+                >
+                    {reminderDes}
+                </Text>
+            </View>
+
+            <Switch
+                value={reminderValue}
+                onValueChange={setReminderValue}
+                trackColor={{
+                    false: theme.colors.borderStrong,
+                    true: theme.colors.primaryLight,
+                }}
+                thumbColor={reminderValue ? theme.colors.primary : theme.colors.surface}
+                ios_backgroundColor={theme.colors.borderStrong}
+            />
+        </View>
+    )
+}
+
 export default function SmartRemindersSection({
     expiryReminders,
     setExpiryReminders,
@@ -42,157 +97,33 @@ export default function SmartRemindersSection({
             </View>
 
             <View style={styles.reminderCard}>
-                <View style={styles.reminderRow}>
-                    <View
-                        style={[
-                            styles.menuIcon,
-                            styles.accentIconBackground,
-                        ]}
-                    >
-                        <Ionicons
-                            name="time-outline"
-                            size={theme.iconSizes.md}
-                            color={theme.colors.primaryDark}
-                        />
-                    </View>
-
-                    <View style={styles.reminderContent}>
-                        <Text style={styles.reminderTitle}>
-                            Expiry reminders
-                        </Text>
-
-                        <Text
-                            style={
-                                styles.reminderDescription
-                            }
-                        >
-                            Get notified before food expires.
-                        </Text>
-                    </View>
-
-                    <Switch
-                        value={expiryReminders}
-                        onValueChange={setExpiryReminders}
-                        trackColor={{
-                            false:
-                                theme.colors.borderStrong,
-                            true:
-                                theme.colors.primaryLight,
-                        }}
-                        thumbColor={
-                            expiryReminders
-                                ? theme.colors.primary
-                                : theme.colors.surface
-                        }
-                        ios_backgroundColor={
-                            theme.colors.borderStrong
-                        }
-                    />
-                </View>
+                <RenderReminderOption
+                    reminderValue={expiryReminders}
+                    setReminderValue={setExpiryReminders}
+                    icon="time-outline"
+                    reminderTitle="Expiry reminders"
+                    reminderDes="Get notified before food expires."
+                />
 
                 <View style={styles.menuDivider} />
 
-                <View style={styles.reminderRow}>
-                    <View
-                        style={[
-                            styles.menuIcon,
-                            styles.softIconBackground,
-                        ]}
-                    >
-                        <Ionicons
-                            name="basket-outline"
-                            size={theme.iconSizes.md}
-                            color={theme.colors.primaryDark}
-                        />
-                    </View>
-
-                    <View style={styles.reminderContent}>
-                        <Text style={styles.reminderTitle}>
-                            Low-stock reminders
-                        </Text>
-
-                        <Text
-                            style={
-                                styles.reminderDescription
-                            }
-                        >
-                            Know when pantry items are
-                            running low.
-                        </Text>
-                    </View>
-
-                    <Switch
-                        value={lowStockReminders}
-                        onValueChange={
-                            setLowStockReminders
-                        }
-                        trackColor={{
-                            false:
-                                theme.colors.borderStrong,
-                            true:
-                                theme.colors.primaryLight,
-                        }}
-                        thumbColor={
-                            lowStockReminders
-                                ? theme.colors.primary
-                                : theme.colors.surface
-                        }
-                        ios_backgroundColor={
-                            theme.colors.borderStrong
-                        }
-                    />
-                </View>
+                <RenderReminderOption
+                    reminderValue={lowStockReminders}
+                    setReminderValue={setLowStockReminders}
+                    icon="basket-outline"
+                    reminderTitle="Low-stock reminders"
+                    reminderDes="Know when pantry items are running low."
+                />
 
                 <View style={styles.menuDivider} />
 
-                <View style={styles.reminderRow}>
-                    <View
-                        style={[
-                            styles.menuIcon,
-                            styles.primaryIconBackground,
-                        ]}
-                    >
-                        <Ionicons
-                            name="sparkles-outline"
-                            size={theme.iconSizes.md}
-                            color={theme.colors.textInverse}
-                        />
-                    </View>
-
-                    <View style={styles.reminderContent}>
-                        <Text style={styles.reminderTitle}>
-                            Meal suggestions
-                        </Text>
-
-                        <Text
-                            style={
-                                styles.reminderDescription
-                            }
-                        >
-                            Receive ideas based on your
-                            inventory.
-                        </Text>
-                    </View>
-
-                    <Switch
-                        value={mealSuggestions}
-                        onValueChange={setMealSuggestions}
-                        trackColor={{
-                            false:
-                                theme.colors.borderStrong,
-                            true:
-                                theme.colors.primaryLight,
-                        }}
-                        thumbColor={
-                            mealSuggestions
-                                ? theme.colors.primary
-                                : theme.colors.surface
-                        }
-                        ios_backgroundColor={
-                            theme.colors.borderStrong
-                        }
-                    />
-                </View>
+                <RenderReminderOption
+                    reminderValue={mealSuggestions}
+                    setReminderValue={setMealSuggestions}
+                    icon="sparkles-outline"
+                    reminderTitle="Meal suggestions"
+                    reminderDes="Receive ideas based on your inventory."
+                />
             </View>
         </>
     );

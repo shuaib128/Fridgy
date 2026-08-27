@@ -1,6 +1,37 @@
 import { Platform } from "react-native";
 
-export const colors = {
+export type ThemeColors = {
+    primary: string;
+    primaryDark: string;
+    primaryLight: string;
+    accent: string;
+    accentDark: string;
+    accentLight: string;
+    background: string;
+    backgroundMuted: string;
+    surface: string;
+    surfaceSoft: string;
+    text: string;
+    textSecondary: string;
+    textMuted: string;
+    textInverse: string;
+    border: string;
+    borderStrong: string;
+    success: string;
+    warning: string;
+    error: string;
+    info: string;
+    successSoft: string;
+    warningSoft: string;
+    errorSoft: string;
+    infoSoft: string;
+    white: string;
+    black: string;
+    transparent: string;
+    overlay: string;
+};
+
+export const lightColors = {
     // Brand colors
     primary: "#6E8434",
     primaryDark: "#4F6423",
@@ -32,13 +63,67 @@ export const colors = {
     error: "#C45446",
     info: "#6F8FAF",
 
+    // Soft status backgrounds
+    successSoft: "#E8EED8",
+    warningSoft: "#FFF0CC",
+    errorSoft: "#F8E3DF",
+    infoSoft: "#E4EDF5",
+
     // Utility
     white: "#FFFFFF",
     black: "#000000",
     transparent: "transparent",
-
     overlay: "rgba(30, 42, 0, 0.45)",
-} as const;
+} as const satisfies ThemeColors;
+
+export const darkColors = {
+    // Brand colors adjusted for dark backgrounds
+    primary: "#A8BD68",
+    primaryDark: "#C2D982",
+    primaryLight: "#829653",
+
+    accent: "#FCC151",
+    accentDark: "#E5A72F",
+    accentLight: "#4A3B1D",
+
+    // Backgrounds
+    background: "#12160D",
+    backgroundMuted: "#181D12",
+    surface: "#1D2316",
+    surfaceSoft: "#252C1D",
+
+    // Text
+    text: "#F4F7E8",
+    textSecondary: "#D9DEC9",
+    textMuted: "#A6AE93",
+    textInverse: "#12160D",
+
+    // Borders
+    border: "#39422E",
+    borderStrong: "#566348",
+
+    // Status colors
+    success: "#A8BD68",
+    warning: "#FCC151",
+    error: "#E27B6E",
+    info: "#8FB3D5",
+
+    // Soft status backgrounds
+    successSoft: "#29381F",
+    warningSoft: "#44371D",
+    errorSoft: "#432823",
+    infoSoft: "#223442",
+
+    // Utility
+    white: "#FFFFFF",
+    black: "#000000",
+    transparent: "transparent",
+    overlay: "rgba(0, 0, 0, 0.65)",
+} as const satisfies ThemeColors;
+
+// Backward-compatible export. Existing components keep using the light colors
+// until they are changed to consume lightTheme or darkTheme dynamically.
+export const colors = lightColors;
 
 export const spacing = {
     none: 0,
@@ -112,55 +197,63 @@ export const componentSizes = {
     headerHeight: 64,
 } as const;
 
-export const shadows = {
-    small: Platform.select({
-        ios: {
-            shadowColor: "#1E2A00",
-            shadowOffset: {
-                width: 0,
-                height: 2,
+function createShadows(shadowColor: string) {
+    return {
+        small: Platform.select({
+            ios: {
+                shadowColor,
+                shadowOffset: {
+                    width: 0,
+                    height: 2,
+                },
+                shadowOpacity: 0.08,
+                shadowRadius: 4,
             },
-            shadowOpacity: 0.08,
-            shadowRadius: 4,
-        },
-        android: {
-            elevation: 2,
-        },
-        default: {},
-    }),
+            android: {
+                elevation: 2,
+            },
+            default: {},
+        }),
 
-    medium: Platform.select({
-        ios: {
-            shadowColor: "#1E2A00",
-            shadowOffset: {
-                width: 0,
-                height: 6,
+        medium: Platform.select({
+            ios: {
+                shadowColor,
+                shadowOffset: {
+                    width: 0,
+                    height: 6,
+                },
+                shadowOpacity: 0.12,
+                shadowRadius: 12,
             },
-            shadowOpacity: 0.12,
-            shadowRadius: 12,
-        },
-        android: {
-            elevation: 5,
-        },
-        default: {},
-    }),
+            android: {
+                elevation: 5,
+            },
+            default: {},
+        }),
 
-    large: Platform.select({
-        ios: {
-            shadowColor: "#1E2A00",
-            shadowOffset: {
-                width: 0,
-                height: 12,
+        large: Platform.select({
+            ios: {
+                shadowColor,
+                shadowOffset: {
+                    width: 0,
+                    height: 12,
+                },
+                shadowOpacity: 0.16,
+                shadowRadius: 20,
             },
-            shadowOpacity: 0.16,
-            shadowRadius: 20,
-        },
-        android: {
-            elevation: 9,
-        },
-        default: {},
-    }),
-} as const;
+            android: {
+                elevation: 9,
+            },
+            default: {},
+        }),
+    } as const;
+}
+
+export const lightShadows = createShadows("#1E2A00");
+export const darkShadows = createShadows("#000000");
+
+// Backward-compatible export for all existing style files.
+export const shadows = lightShadows;
 
 export const opacity = {
     disabled: 0.45,
@@ -168,8 +261,7 @@ export const opacity = {
     pressed: 0.8,
 } as const;
 
-export const theme = {
-    colors,
+const sharedTheme = {
     spacing,
     fontSizes,
     lineHeights,
@@ -177,8 +269,33 @@ export const theme = {
     radii,
     iconSizes,
     componentSizes,
-    shadows,
     opacity,
 } as const;
 
-export type AppTheme = typeof theme;
+export const lightTheme = {
+    ...sharedTheme,
+    colors: lightColors,
+    shadows: lightShadows,
+} as const;
+
+export const darkTheme = {
+    ...sharedTheme,
+    colors: darkColors,
+    shadows: darkShadows,
+} as const;
+
+// Backward-compatible default theme. Nothing currently using `theme` breaks.
+export const theme = lightTheme;
+
+export type AppTheme = {
+    colors: ThemeColors;
+    spacing: typeof spacing;
+    fontSizes: typeof fontSizes;
+    lineHeights: typeof lineHeights;
+    fontWeights: typeof fontWeights;
+    radii: typeof radii;
+    iconSizes: typeof iconSizes;
+    componentSizes: typeof componentSizes;
+    shadows: ReturnType<typeof createShadows>;
+    opacity: typeof opacity;
+};

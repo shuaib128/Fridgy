@@ -1,7 +1,7 @@
 import api from "@/hooks/api";
 import {
-    UserPreference,
-    GetUserPreferenceResponse
+    GetUserPreferenceResponse,
+    UserPreference
 } from "@/types/user-preference";
 
 export async function getUserPreferences(): Promise<UserPreference> {

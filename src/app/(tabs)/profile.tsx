@@ -1,4 +1,20 @@
+import { logout } from "@/auth/logout";
+import { getUserPreferences } from "@/components/onboarding/get-user-preferance";
+import AccountSection from "@/components/profile/AccountSection";
+import AppSettingsSection from "@/components/profile/AppSettingsSection";
+import SmartRemindersSection from "@/components/profile/SmartRemindersSection";
+import { Screen } from "@/components/ui/screen";
+import api, { ApiError } from "@/hooks/api";
+import { useUserStore } from "@/stores/auth-store";
+import { useInventoryStore } from "@/stores/inventory-store";
+import { useUserPreferenceStore } from "@/stores/user-preference-store";
+import { theme } from "@/styles/theme";
+import {
+    CreateUserPreferenceRequest,
+    CreateUserPreferenceResponse,
+} from "@/types/user-preference";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
     Alert,
@@ -9,23 +25,7 @@ import {
     Text,
     View,
 } from "react-native";
-import { router } from "expo-router";
-import { useUserStore } from "@/stores/auth-store";
-import { useInventoryStore } from "@/stores/inventory-store";
-import { useUserPreferenceStore } from "@/stores/user-preference-store";
-import { logout } from "@/auth/logout";
-import api, { ApiError } from "@/hooks/api";
-import {
-    CreateUserPreferenceRequest,
-    CreateUserPreferenceResponse,
-} from "@/types/user-preference";
-import { getUserPreferences } from "@/components/onboarding/get-user-preferance";
-import { Screen } from "@/components/ui/screen";
 import { PageHeader } from "../../components/navigation/screen-header";
-import AccountSection from "@/components/profile/AccountSection";
-import SmartRemindersSection from "@/components/profile/SmartRemindersSection";
-import AppSettingsSection from "@/components/profile/AppSettingsSection";
-import { theme } from "@/styles/theme";
 
 type MenuItem = {
     id: string;
@@ -513,7 +513,15 @@ export default function ProfileScreen() {
                 renderMenuItem={renderMenuItem}
             />
 
-            <View style={styles.supportCard}>
+            <Pressable
+                onPress={() => router.push("/support")}
+                accessibilityRole="button"
+                accessibilityLabel="Open help center"
+                style={({ pressed }) => [
+                    styles.supportCard,
+                    pressed && styles.supportPressed,
+                ]}
+            >
                 <View style={styles.supportIcon}>
                     <Ionicons
                         name="help-circle-outline"
@@ -522,40 +530,24 @@ export default function ProfileScreen() {
                     />
                 </View>
 
-                <View
-                    style={styles.supportContent}
-                >
-                    <Text
-                        style={styles.supportTitle}
-                    >
+                <View style={styles.supportContent}>
+                    <Text style={styles.supportTitle}>
                         Need help?
                     </Text>
 
-                    <Text
-                        style={
-                            styles.supportDescription
-                        }
-                    >
-                        Find answers or contact
-                        Fridgy support.
+                    <Text style={styles.supportDescription}>
+                        Find answers or contact Fridgy support.
                     </Text>
                 </View>
 
-                <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Open help center"
-                    style={({ pressed }) => [
-                        styles.supportButton,
-                        pressed && styles.pressed,
-                    ]}
-                >
+                <View style={styles.supportButton}>
                     <Ionicons
                         name="arrow-forward"
                         size={theme.iconSizes.sm}
                         color={theme.colors.textInverse}
                     />
-                </Pressable>
-            </View>
+                </View>
+            </Pressable>
 
             <Pressable
                 accessibilityRole="button"
@@ -897,6 +889,11 @@ const styles = StyleSheet.create({
     },
 
     pressed: {
+        opacity: theme.opacity.pressed,
+        transform: [{ scale: 0.98 }],
+    },
+
+    supportPressed: {
         opacity: theme.opacity.pressed,
         transform: [{ scale: 0.98 }],
     },

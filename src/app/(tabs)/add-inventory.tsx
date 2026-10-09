@@ -1,4 +1,26 @@
+import { ActionCard } from "@/components/add-inventory/action-card";
+import {
+    AddManuallyModal,
+    ManualKitchenItem
+} from "@/components/add-inventory/add-manually-modal";
+import {
+    QuickFoodSearch
+} from "@/components/add-inventory/quick-food-search";
+import { PageHeader } from "@/components/navigation/screen-header";
 import { Screen } from "@/components/ui/screen";
+import api, { ApiError } from "@/hooks/api";
+import { useInventoryStore } from "@/stores/inventory-store";
+import {
+    colors,
+    fontSizes,
+    fontWeights,
+    iconSizes,
+    lineHeights,
+    radii,
+    shadows,
+    spacing,
+} from "@/styles/theme";
+import { CreateInventoryItemResponse } from "@/types/inventory-item";
 import { Ionicons } from "@expo/vector-icons";
 import { Href, useRouter } from "expo-router";
 import { useRef, useState } from "react";
@@ -12,28 +34,6 @@ import {
 import Animated, {
     FadeInDown
 } from "react-native-reanimated";
-import { PageHeader } from "@/components/navigation/screen-header";
-import { ActionCard } from "@/components/add-inventory/action-card";
-import {
-    AddManuallyModal,
-    ManualKitchenItem
-} from "@/components/add-inventory/add-manually-modal";
-import api, { ApiError } from "@/hooks/api";
-import {
-    QuickFoodSearch
-} from "@/components/add-inventory/quick-food-search";
-import {
-    colors,
-    fontSizes,
-    fontWeights,
-    iconSizes,
-    lineHeights,
-    radii,
-    shadows,
-    spacing,
-} from "@/styles/theme";
-import { useInventoryStore } from "@/stores/inventory-store";
-import { CreateInventoryItemResponse } from "@/types/inventory-item";
 
 type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
 
@@ -146,10 +146,11 @@ export default function AddInventoryScreen() {
         router.push(route);
     };
 
+    // Handle the food adding method
     const handleMethodPress = (method: AddMethod) => {
         switch (method.id) {
             case "barcode":
-                openRoute("/add-inventory/barcode" as Href);
+                openRoute("/scan-receipt" as Href);
                 break;
             case "photo":
                 openRoute("/add-inventory/photo" as Href);

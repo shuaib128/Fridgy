@@ -150,7 +150,7 @@ export default function AddInventoryScreen() {
     const handleMethodPress = (method: AddMethod) => {
         switch (method.id) {
             case "barcode":
-                openRoute("/scan-receipt" as Href);
+                openRoute("/scan-barcode" as Href);
                 break;
             case "photo":
                 openRoute("/add-inventory/photo" as Href);

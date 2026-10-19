@@ -3,4 +3,5 @@ export type Food = {
     code: string;
     name: string;
     brand: string;
+    image_url: string;
 };

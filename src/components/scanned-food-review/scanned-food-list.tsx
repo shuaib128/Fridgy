@@ -1,4 +1,4 @@
-
+import { toTitleCase } from "@/constants/toTitalCase";
 import { ScannedFood } from "@/stores/scanned-food-store";
 import {
     colors,
@@ -11,6 +11,7 @@ import {
     spacing,
 } from "@/styles/theme";
 import { Ionicons } from "@expo/vector-icons";
+import { memo } from "react";
 import {
     ActivityIndicator,
     Pressable,
@@ -21,7 +22,13 @@ import {
 import ReanimatedSwipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 import Animated, {
     FadeInDown,
+    FadeOutLeft,
+    FadeOutUp,
+    LinearTransition,
 } from "react-native-reanimated";
+import FoodImage from "./FoodImage";
+
+const MemoizedFoodImage = memo(FoodImage);
 
 type ScannedFoodListProps = {
     foods: ScannedFood[];
@@ -44,7 +51,11 @@ export default function ScannedFoodList({
         <>
             {/* Loading */}
             {isLoading && (
-                <View style={styles.statusCard}>
+                <Animated.View
+                    entering={FadeInDown.duration(250)}
+                    exiting={FadeOutUp.duration(200)}
+                    style={styles.statusCard}
+                >
                     <ActivityIndicator
                         color={colors.primary}
                     />
@@ -52,12 +63,16 @@ export default function ScannedFoodList({
                     <Text style={styles.statusText}>
                         Looking up your food...
                     </Text>
-                </View>
+                </Animated.View>
             )}
 
             {/* Error */}
             {errorMessage && (
-                <View style={styles.errorCard}>
+                <Animated.View
+                    entering={FadeInDown.duration(250)}
+                    exiting={FadeOutUp.duration(200)}
+                    style={styles.errorCard}
+                >
                     <Ionicons
                         name="alert-circle-outline"
                         size={iconSizes.md}
@@ -67,146 +82,167 @@ export default function ScannedFoodList({
                     <Text style={styles.errorText}>
                         {errorMessage}
                     </Text>
-                </View>
+                </Animated.View>
             )}
 
             {/* Food List */}
-            <View style={styles.foodList}>
+            <Animated.View
+                layout={LinearTransition.duration(250)}
+                style={styles.foodList}
+            >
                 {foods.map((food, index) => (
-                    <ReanimatedSwipeable
+                    <Animated.View
                         key={food.code}
-                        friction={2}
-                        rightThreshold={40}
-                        overshootRight={false}
-                        renderRightActions={() => (
-                            <Pressable
-                                style={styles.swipeDeleteButton}
-                                onPress={() => onRemoveFood(food.code)}
-                                accessibilityRole="button"
-                                accessibilityLabel={`Delete ${food.name}`}
-                            >
-                                <Ionicons name="trash-outline" size={iconSizes.md} color="#FFFFFF" />
-                                <Text style={styles.swipeDeleteText}>Delete</Text>
-                            </Pressable>
-                        )}
+                        entering={FadeInDown
+                            .delay(Math.min(index, 5) * 40)
+                            .duration(280)}
+                        exiting={FadeOutLeft.duration(250)}
+                        layout={LinearTransition.duration(250)}
                     >
-                        <Animated.View
-                            entering={FadeInDown.delay(
-                                120 + Math.min(index, 8) * 55,
-                            ).springify()}
-                            style={styles.foodCard}
-                        >
-                            <View style={styles.foodIcon}>
-                                <Ionicons
-                                    name="nutrition-outline"
-                                    size={iconSizes.lg}
-                                    color={colors.primaryDark}
-                                />
-                            </View>
-
-                            <View style={styles.foodCopy}>
-                                <Text
-                                    style={styles.foodName}
-                                    numberOfLines={2}
-                                >
-                                    {food.name}
-                                </Text>
-
-                                <Text
-                                    style={styles.foodBrand}
-                                    numberOfLines={1}
-                                >
-                                    {food.brand || "Unknown brand"}
-                                </Text>
-
-                                <View style={styles.barcodeRow}>
-                                    <Ionicons
-                                        name="barcode-outline"
-                                        size={iconSizes.xs}
-                                        color={colors.textMuted}
-                                    />
-
-                                    <Text
-                                        style={styles.barcodeText}
-                                        numberOfLines={1}
-                                    >
-                                        {food.code}
-                                    </Text>
-                                </View>
-                            </View>
-
-                            <View style={styles.foodActions}>
-                                {/* Remove Food */}
+                        <ReanimatedSwipeable
+                            friction={2}
+                            rightThreshold={40}
+                            overshootRight={false}
+                            renderRightActions={() => (
                                 <Pressable
-                                    style={styles.removeButton}
+                                    style={styles.swipeDeleteButton}
                                     onPress={() =>
                                         onRemoveFood(food.code)
                                     }
                                     accessibilityRole="button"
-                                    accessibilityLabel={`Remove ${food.name}`}
+                                    accessibilityLabel={`Delete ${food.name}`}
                                 >
                                     <Ionicons
-                                        name="close"
-                                        size={iconSizes.sm}
-                                        color={colors.textMuted}
+                                        name="trash-outline"
+                                        size={iconSizes.md}
+                                        color="#FFFFFF"
                                     />
+
+                                    <Text style={styles.swipeDeleteText}>
+                                        Delete
+                                    </Text>
                                 </Pressable>
+                            )}
+                        >
+                            <View style={styles.foodCard}>
+                                {/* Food Image */}
+                                <MemoizedFoodImage
+                                    imageUrl={food.image_url}
+                                />
 
-                                {/* Quantity Controls */}
-                                <View style={styles.quantityControls}>
-                                    <Pressable
-                                        style={[
-                                            styles.quantityButton,
-                                            food.quantity <= 1 &&
-                                            styles.quantityButtonDisabled,
-                                        ]}
-                                        onPress={() =>
-                                            onDecreaseQuantity(food.code)
-                                        }
-                                        disabled={food.quantity <= 1}
-                                        accessibilityRole="button"
-                                        accessibilityLabel={`Decrease quantity of ${food.name}`}
+                                {/* Food Information */}
+                                <View style={styles.foodCopy}>
+                                    <Text
+                                        style={styles.foodName}
+                                        numberOfLines={2}
                                     >
-                                        <Ionicons
-                                            name="remove"
-                                            size={iconSizes.sm}
-                                            color={
-                                                food.quantity <= 1
-                                                    ? colors.textMuted
-                                                    : colors.primaryDark
-                                            }
-                                        />
-                                    </Pressable>
-
-                                    <Text style={styles.quantityText}>
-                                        {food.quantity}
+                                        {toTitleCase(food.name)}
                                     </Text>
 
+                                    <Text
+                                        style={styles.foodBrand}
+                                        numberOfLines={1}
+                                    >
+                                        {toTitleCase(food.brand) || "Unknown brand"}
+                                    </Text>
+
+                                    <View style={styles.barcodeRow}>
+                                        <Ionicons
+                                            name="barcode-outline"
+                                            size={iconSizes.xs}
+                                            color={colors.textMuted}
+                                        />
+
+                                        <Text
+                                            style={styles.barcodeText}
+                                            numberOfLines={1}
+                                        >
+                                            {food.code}
+                                        </Text>
+                                    </View>
+                                </View>
+
+                                {/* Food Actions */}
+                                <View style={styles.foodActions}>
+                                    {/* Remove Food */}
                                     <Pressable
-                                        style={styles.quantityButton}
+                                        style={styles.removeButton}
                                         onPress={() =>
-                                            onIncreaseQuantity(food.code)
+                                            onRemoveFood(food.code)
                                         }
                                         accessibilityRole="button"
-                                        accessibilityLabel={`Increase quantity of ${food.name}`}
+                                        accessibilityLabel={`Remove ${food.name}`}
                                     >
                                         <Ionicons
-                                            name="add"
+                                            name="close"
                                             size={iconSizes.sm}
-                                            color={colors.primaryDark}
+                                            color={colors.textMuted}
                                         />
                                     </Pressable>
+
+                                    {/* Quantity Controls */}
+                                    <View style={styles.quantityControls}>
+                                        <Pressable
+                                            style={[
+                                                styles.quantityButton,
+                                                food.quantity <= 1 &&
+                                                styles.quantityButtonDisabled,
+                                            ]}
+                                            onPress={() =>
+                                                onDecreaseQuantity(food.code)
+                                            }
+                                            disabled={food.quantity <= 1}
+                                            accessibilityRole="button"
+                                            accessibilityLabel={`Decrease quantity of ${food.name}`}
+                                        >
+                                            <Ionicons
+                                                name="remove"
+                                                size={iconSizes.sm}
+                                                color={
+                                                    food.quantity <= 1
+                                                        ? colors.textMuted
+                                                        : colors.primaryDark
+                                                }
+                                            />
+                                        </Pressable>
+
+                                        <Animated.Text
+                                            style={styles.quantityText}
+                                        >
+                                            {food.quantity}
+                                        </Animated.Text>
+
+                                        <Pressable
+                                            style={styles.quantityButton}
+                                            onPress={() =>
+                                                onIncreaseQuantity(food.code)
+                                            }
+                                            accessibilityRole="button"
+                                            accessibilityLabel={`Increase quantity of ${food.name}`}
+                                        >
+                                            <Ionicons
+                                                name="add"
+                                                size={iconSizes.sm}
+                                                color={colors.primaryDark}
+                                            />
+                                        </Pressable>
+                                    </View>
                                 </View>
                             </View>
-                        </Animated.View>
-                    </ReanimatedSwipeable>
+                        </ReanimatedSwipeable>
+                    </Animated.View>
                 ))}
-            </View>
+            </Animated.View>
 
             {/* Empty State */}
             {foods.length === 0 && !isLoading && (
                 <Animated.View
-                    entering={FadeInDown.delay(150).duration(420)}
+                    key="empty-basket"
+                    entering={FadeInDown
+                        .delay(100)
+                        .duration(350)}
+                    exiting={FadeOutUp.duration(200)}
+                    layout={LinearTransition.duration(250)}
                     style={styles.emptyCard}
                 >
                     <View style={styles.emptyIcon}>

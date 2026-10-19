@@ -26,7 +26,7 @@ import {
     View,
 } from "react-native";
 import Animated, {
-    FadeInDown,
+    FadeInDown
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 

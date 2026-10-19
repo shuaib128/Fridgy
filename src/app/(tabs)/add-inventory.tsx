@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/navigation/screen-header";
 import { Screen } from "@/components/ui/screen";
 import api, { ApiError } from "@/hooks/api";
 import { useInventoryStore } from "@/stores/inventory-store";
+import { useScannedFoodStore } from "@/stores/scanned-food-store";
 import {
     colors,
     fontSizes,
@@ -214,6 +215,15 @@ export default function AddInventoryScreen() {
         }
     };
 
+    // Get total number of the items that has been scaned and waiting to be added
+    const totalQuantity = useScannedFoodStore((state) =>
+        state.foods.reduce(
+            (total, food) => total + food.quantity,
+            0,
+        )
+    );
+
+
     return (
 
         <Screen
@@ -231,7 +241,8 @@ export default function AddInventoryScreen() {
                 description="How would you like to add something to your kitchen?"
                 icon="basket-outline"
                 accessibilityLabel="Open inventory"
-                onPress={() => router.push("/inventory")}
+                onPress={() => router.push("/scanned-food-preview")}
+                badgeCount={totalQuantity}
             />
 
             <Animated.View

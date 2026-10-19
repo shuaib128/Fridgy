@@ -1,4 +1,3 @@
-import { StyleSheet } from "react-native";
 import { AttentionCard } from "@/components/home/attention-card";
 import { DailyFridgeInsight, FridgeStatusCard } from "@/components/home/fridge-status-card";
 import KitchenOverviewCard from "@/components/home/kitchen-overview-card";
@@ -19,8 +18,9 @@ import {
     spacing
 } from "@/styles/theme";
 import { router } from "expo-router";
-import { PageHeader } from "../../components/navigation/screen-header";
 import { useState } from "react";
+import { StyleSheet } from "react-native";
+import { PageHeader } from "../../components/navigation/screen-header";
 
 // Greeting function for the home screen
 function getGreeting() {
@@ -160,7 +160,6 @@ export default function HomeScreen() {
         setIsRefreshing(true);
 
         setTimeout(() => {
-            console.log("Executed after 2 seconds");
             setIsRefreshing(false);
         }, 3000);
     };

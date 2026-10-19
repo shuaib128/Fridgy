@@ -312,7 +312,6 @@ export default function ProfileScreen() {
         setIsRefreshing(true);
 
         setTimeout(() => {
-            console.log("Executed after 2 seconds");
             setIsRefreshing(false);
         }, 3000);
     };

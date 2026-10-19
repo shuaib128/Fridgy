@@ -100,9 +100,6 @@ export default function BarcodeCameraScreen() {
         // Trigger camera unmount on the next render.
         setHasScanned(true);
 
-        console.log("Barcode:", result.data);
-        console.log("Type:", result.type);
-
         router.push({
             pathname: "/scanned-food-preview",
             params: {

@@ -64,11 +64,6 @@ export default function SupportScreen() {
             return;
         }
 
-        console.log({
-            subject,
-            message,
-        });
-
         // Later:
         // await sendSupportMessage({
         //     subject,
